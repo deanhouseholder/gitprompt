@@ -49,7 +49,7 @@ git_prompt() {
         cd "${dira[$i]}"
         printf "${git_subdir}/$(basename $PWD)$git_style ("
         printf "$(git_display_branch)${git_style})"
-        test $(($i+1)) -eq ${#dira[@]} || printf "$git_submark ▶ "
+        test $(($i+1)) -eq ${#dira[@]} || printf "$git_submark ↠ "
       done
     else
       # Not in a git submodule directory

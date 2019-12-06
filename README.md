@@ -7,7 +7,6 @@ BASH prompt function to support display of git branch name along with:
 - Display branch name in different colors for dirty/clean statuses
 - Display additional indicators for various git statuses:
   - Detects if you are in a git repo
-  - Detects code status (clean/dirty)
   - Detects stashed code
   - Detects if you are ahead or behind the remote repo
   - Detects if no remotes defined
@@ -26,7 +25,7 @@ BASH prompt function to support display of git branch name along with:
 | «              | Working copy is currently behind remote repo                        |
 | »              | Working copy is currently ahead of remote repo                      |
 | ¤              | There are no remotes defined                                        |
-| ▶              | Submodule: `/ParentDir (BranchName)` ▶ `/SubmoduleDir (BranchName)` |
+| ↠              | Submodule: `/ParentDir (BranchName)` ↠ `/SubmoduleDir (BranchName)` |
 | °              | Working copy is a detached head                                     |
 | !GIT DIR       | In the `/.git/` directory                                           |
 | !BARE REPO     | In a bare git repo                                                  |
