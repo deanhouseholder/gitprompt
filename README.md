@@ -17,7 +17,7 @@ BASH prompt function to support display of git branch name along with:
 
 
 
-## Symbol Key:
+## Symbol Key
 
 | Symbol         | Key                                                                 |
 |----------------|---------------------------------------------------------------------|
@@ -37,13 +37,15 @@ BASH prompt function to support display of git branch name along with:
 
 
 
-## Install:
+## Install
 
-Add this to one of your bash startup files: (`.bashrc`, `.bash_profile`, `.profile`)
+1) Download gitprompt.sh to your home directory
+
+2) Add this to one of your bash startup files: (`.bashrc`, `.bash_profile`, `.profile`)
 
 ```bash
 # Include the Git Prompt functions
-. ~/bin/gitprompt/gitprompt.sh
+. ~/gitprompt.sh
 
 function show_prompt {
   export PS1="\u@\h \w $(git_prompt)> \[\e[0m\] "
@@ -56,9 +58,10 @@ PROMPT_COMMAND="show_prompt"
 show_prompt
 ```
 
+3) Customize your prompt to your liking on the `export` line above.
 
 
 
-## To-Do:
+## To-Do
 
 - Support git subtrees
