@@ -77,7 +77,7 @@ function git_display_branch {
     fi
 
     # Display Branch name
-    printf "$(git branch --show-current)"
+    printf "$(git rev-parse --abbrev-ref HEAD)"
 
     if [[ -f "$git_dir/MERGE_HEAD" ]]; then
       printf '|MERGING'
