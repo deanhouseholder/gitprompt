@@ -1,7 +1,7 @@
 ## Bash Prompt Start
 
 # Include the Git Prompt functions
-script_path="$(cd $(dirname $BASH_SOURCE) && echo $(pwd))"
+script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 . "$script_path/gitprompt.sh"
 
 # Customize the hostname if you prefer
