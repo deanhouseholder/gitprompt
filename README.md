@@ -61,6 +61,17 @@ show_prompt
 3) Customize your prompt to your liking on the `export` line above.
 
 
+## Example Prompt
+
+A nice-looking example prompt is included and ready to just include in your startup if you prefer.
+
+After cloning this repo to your home dir, (let's assume you cloned it to ~/gitprompt) then you would add
+the following to one of your startup files: (`.bashrc`, `.bash_profile`, `.profile`)
+
+```bash
+. ~/gitprompt/example_prompt.sh
+```
+
 
 ## To-Do
 
