@@ -25,8 +25,8 @@ BASH prompt function to support display of git branch name along with:
 | «              | Working copy is currently behind remote repo                        |
 | »              | Working copy is currently ahead of remote repo                      |
 | ¤              | There are no remotes defined                                        |
-| ↠              | Submodule: `/ParentDir (BranchName)` ↠ `/SubmoduleDir (BranchName)` |
-| °              | Working copy is a detached head                                     |
+| ↠             | Submodule: `/ParentDir (BranchName)` ↠ `/SubmoduleDir (BranchName)` |
+| °              | Working copy is a detached head  `master°77d0149`                   |
 | !GIT DIR       | In the `/.git/` directory                                           |
 | !BARE REPO     | In a bare git repo                                                  |
 | MERGING        | Repo in Merging status                                              |
@@ -63,7 +63,7 @@ show_prompt
 
 ## Example Prompt
 
-A nice-looking example prompt is included and ready to just include in your startup if you prefer.
+An example prompt that looks nice on a dark background is included and ready to just include in your startup if you prefer.
 
 After cloning this repo to your home dir, (let's assume you cloned it to ~/gitprompt) then you would add
 the following to one of your startup files: (`.bashrc`, `.bash_profile`, `.profile`)

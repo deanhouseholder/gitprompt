@@ -24,14 +24,13 @@ function show_prompt {
   ## Determine if user is root or not
   test $UID -eq 0 && bg_color='root_bg' || bg_color='user_bg'
 
-  test -z "$USER" && export USER=$(whoami)
-  export prefix="$fgr${!bg_color} $USER $fgr"
+  test -z "$USER" && local USER=$(whoami)
+  local prefix="$fgr${!bg_color} $USER $fgr"
   if [[ "$host" != "" ]]; then
     prefix+="$host_bg $host $fgr"
   fi
   prefix+="$dir_bg "
-  export suffix="> $N"
-  export PS1="$prefix\$(shorten_pwd) $(git_prompt)$suffix"
+  export PS1="$prefix\$(shorten_pwd) $(git_prompt)➤ $N"
 }
 
 # Run this function every time the prompt is displayed to update the variables
