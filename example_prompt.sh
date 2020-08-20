@@ -1,11 +1,6 @@
-## Bash Prompt Start
-
 # Include the Git Prompt functions
 script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 . "$script_path/gitprompt.sh"
-
-# Customize the hostname if you prefer
-host=$(hostname)
 
 # Function to shorten the directory
 function shorten_pwd {
@@ -13,24 +8,26 @@ function shorten_pwd {
 }
 
 function show_prompt {
-  ## Define Colors
-  local fgr="$(fg 253)"                       # FG: White
-  local root_bg="$(bg 130)"                   # BG: Orange
-  local user_bg="$(bg 24)"                    # BG: Blue
-  local dir_bg="$(bg 236)"                    # BG: Dark Gray
-  local host_bg="$(bg 30)"                    # BG: Blue-Green
-  local N="\[\e[0m\]"                         # Reset styles
+  # Define Colors for non-git part of prompt
+  local fgr="$(fg 253)"      # FG: White
+  local root_bg="$(bg 130)"  # BG: Orange
+  local user_bg="$(bg 24)"   # BG: Blue
+  local dir_bg="$(bg 236)"   # BG: Dark Gray
+  local host_bg="$(bg 30)"   # BG: Blue-Green
+  local N="$(norm)"          # Reset styles
+  local bg_color user
 
-  ## Determine if user is root or not
-  test $UID -eq 0 && bg_color='root_bg' || bg_color='user_bg'
+  # To customize the hostname, run: echo my-custom-hostname > ~/.displayname
+  test -f ~/.displayname && host="$(cat ~/.displayname)" || host="$(hostname)"
 
-  test -z "$USER" && local USER=$(whoami)
-  local prefix="$fgr${!bg_color} $USER $fgr"
-  if [[ "$host" != "" ]]; then
-    prefix+="$host_bg $host $fgr"
-  fi
-  prefix+="$dir_bg "
-  export PS1="$prefix\$(shorten_pwd) $(git_prompt)➤ $N"
+  # Determine if user is root or not
+  test $UID -eq 0 && bg_color="$root_bg" || bg_color="$user_bg"
+
+  # Get username
+  test -z "$USER" && user="$(whoami)" || user="$USER"
+
+  # Set prompt
+  export PS1="$fgr$bg_color $user $fgr$host_bg $host $fgr$dir_bg \$(shorten_pwd) $(git_prompt)➤ $N"
 }
 
 # Run this function every time the prompt is displayed to update the variables
@@ -38,6 +35,3 @@ PROMPT_COMMAND="show_prompt"
 
 # Run the function once to pre-load variables
 show_prompt
-
-## Bash Prompt End
-

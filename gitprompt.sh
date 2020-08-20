@@ -2,6 +2,9 @@
 # Author: Dean Householder <deanhouseholder@gmail.com>
 # See README.md for more details
 
+# If TERM is not set, set to 256 colors
+test -z "$TERM" && export TERM=xterm-256color
+
 # Print a foreground color that is properly-escaped for PS1 prompts
 fg() {
   printf "\[\e[38;5;$1m\]"
@@ -12,7 +15,12 @@ bg() {
   printf "\[\e[48;5;$1m\]"
 }
 
-# Define Git Colors
+# Reset the colors to default in the PS1 prompt
+norm() {
+  printf "\[\e[0m\]"
+}
+
+# Define Git Prompt Colors
 git_style="$(fg 15)$(bg 17)"      # FG: White, BG: Dark Blue-Purple
 git_clean="$(fg 46)"              # FG: Green
 git_dirty="$(fg 196)"             # FG: Red
