@@ -39,38 +39,28 @@ BASH prompt function to support display of git branch name along with:
 
 ## Install
 
-1) Download gitprompt.sh to your home directory
+1) Clone the gitprompt repository under your home directory (typically ~/gitprompt)
 
-2) Add this to one of your bash startup files: (`.bashrc`, `.bash_profile`, `.profile`)
+2) Source the file once to test it out:
 
-```bash
-# Include the Git Prompt functions
-. ~/gitprompt.sh
-
-function show_prompt {
-  export PS1="\u@\h \w $(git_prompt)> \[\e[0m\] "
-}
-
-# Run this function every time the prompt is displayed to update the variables
-PROMPT_COMMAND="show_prompt"
-
-# Run the function once to pre-load variables
-show_prompt
+```shell
+source ~/gitprompt/default-prompt.sh
 ```
 
-3) Customize your prompt to your liking on the `export` line above.
+3) If you're happy with the defaults, add this to one of your bash startup files: (`.bashrc`, `.bash_profile`, `.profile`)
 
-
-## Example Prompt
-
-An example prompt that looks nice on a dark background is included and ready to just include in your startup if you prefer.
-
-After cloning this repo to your home dir, (let's assume you cloned it to ~/gitprompt) then you would add
-the following to one of your startup files: (`.bashrc`, `.bash_profile`, `.profile`)
-
-```bash
-. ~/gitprompt/example_prompt.sh
+```shell
+echo "source ~/gitprompt/default-prompt.sh" >> ~/.bashrc
 ```
+
+This will allow it to persist between logins.
+
+4) If you prefer to modify the colors or appearance, copy the default-prompt.sh to custom-prompt.sh and edit that copy
+
+```shell
+cp ~/gitprompt/default-prompt.sh ~/gitprompt/custom-prompt.sh
+```
+
 
 
 ## To-Do

@@ -27,6 +27,7 @@
 | gf            | Shortcut for "git fetch"                                       |
 | ghash         | Find the branch that contains a specific commit hash           |
 | gitcred       | Configure git's credential helper path to ~/.git-credentials   |
+| gitflow       | Set up (or fix) git flow configuration                         |
 | gl            | Commit log with colored output                                 |
 | glg           | Commit log with graph (one line per commit)                    |
 | gla           | Commit log without graph (one line per commit)                 |

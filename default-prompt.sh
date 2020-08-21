@@ -1,7 +1,7 @@
 # Include the Git Prompt functions and aliases
 script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 . "$script_path/gitprompt.sh"
-. "$script_path/gitaliases.sh"
+. "$script_path/gitshortcuts.sh"
 
 # Function to shorten the directory
 function shorten_pwd {
