@@ -61,10 +61,42 @@ This will allow it to persist between logins.
 cp ~/gitprompt/default-prompt.sh ~/gitprompt/custom-prompt.sh
 ```
 
+## Also Included:
 
-## Git Shortcuts
+### Git Shortcuts
 
 Also included are a great collection of Git Shortcuts. See the [git-menu.md](git-menu.md) to see the full list. You can run `gm` at any time to see the full list of git shortcuts on your terminal.
+
+
+### Bash Git Completion
+
+This allows you to use the `tab` key to auto-fill many git options. For example you can type `git ` and press tab twice to display:
+```
+add               describe          mv                send-email
+am                diff              notes             shortlog
+apply             difftool          prune             show
+archive           fetch             pull              show-branch
+bisect            format-patch      push              sparse-checkout
+blame             fsck              range-diff        stage
+branch            gc                rebase            stash
+bundle            gitk              reflog            status
+checkout          grep              remote            submodule
+cherry            gui               repack            switch
+cherry-pick       help              replace           tag
+citool            init              request-pull      whatchanged
+clean             instaweb          reset             worktree
+clone             log               restore
+commit            merge             revert
+config            mergetool         rm
+```
+
+And then if type `git remote ` and press tab twice to display:
+```
+add            get-url        prune          remove         rename
+set-branches   set-head       set-url        show           update
+```
+
+And finally you can type `git remote add ` and press tab twice to autofill `origin`.
 
 
 ## To-Do

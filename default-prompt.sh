@@ -2,6 +2,7 @@
 script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 . "$script_path/git-prompt.sh"
 . "$script_path/git-shortcuts.sh"
+. "$script_path/git-completion.bash"
 
 # Function to shorten the directory
 function shorten_pwd {
