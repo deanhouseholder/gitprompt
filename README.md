@@ -64,7 +64,7 @@ cp ~/gitprompt/default-prompt.sh ~/gitprompt/custom-prompt.sh
 
 ## Git Shortcuts
 
-Also included are a great collection of Git Shortcuts. See the [git-menu.md](git-menu.md) to see the full list. You can run `gh` at any time to see the full list of git shortcuts on your terminal.
+Also included are a great collection of Git Shortcuts. See the [git-menu.md](git-menu.md) to see the full list. You can run `gm` at any time to see the full list of git shortcuts on your terminal.
 
 
 ## To-Do

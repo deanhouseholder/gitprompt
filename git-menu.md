@@ -1,4 +1,4 @@
-# Help Menu
+# Git Shortcuts Menu
 
 | Alias Name    | Description                                                    |
 | ------------- | -------------------------------------------------------------- |
