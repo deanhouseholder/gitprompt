@@ -39,7 +39,7 @@ BASH prompt function to support display of git branch name along with:
 
 ## Install
 
-1) Clone the gitprompt repository under your home directory (typically ~/gitprompt)
+1) Clone the gitprompt repository under your home directory (typically `~/gitprompt`)
 
 2) Source the file once to test it out:
 
@@ -61,6 +61,10 @@ This will allow it to persist between logins.
 cp ~/gitprompt/default-prompt.sh ~/gitprompt/custom-prompt.sh
 ```
 
+
+## Git Shortcuts
+
+Also included are a great collection of Git Shortcuts. See the `git-menu.md` to see the full list. You can run `gh` at any time to see the full list of git shortcuts on your terminal.
 
 
 ## To-Do
