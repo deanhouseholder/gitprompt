@@ -4,6 +4,13 @@ script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 . "$script_path/git-shortcuts.sh"
 . "$script_path/git-completion.bash"
 
+# To customize the hostname, run: echo my-custom-hostname > ~/.displayname
+if [[ -f ~/.displayname ]]; then
+  export prompt_host="$(cat ~/.displayname)"
+else
+  export prompt_host="$(hostname)"
+fi
+
 # Function to shorten the directory
 function shorten_pwd {
   test ${#PWD} -gt 40 && pwd | awk -F/ '{print "/"$2"/["(NF-4)"]/"$(NF-1)"/"$NF}' || pwd
@@ -16,11 +23,9 @@ function show_prompt {
   local user_bg="$(bg 24)"   # BG: Blue
   local dir_bg="$(bg 236)"   # BG: Dark Gray
   local host_bg="$(bg 30)"   # BG: Blue-Green
+  local vim_bg="$(bg 90)"    # BG: Purple
   local N="$(norm)"          # Reset styles
   local bg_color user
-
-  # To customize the hostname, run: echo my-custom-hostname > ~/.displayname
-  test -f ~/.displayname && host="$(cat ~/.displayname)" || host="$(hostname)"
 
   # Determine if user is root or not
   test $UID -eq 0 && bg_color="$root_bg" || bg_color="$user_bg"
@@ -28,8 +33,11 @@ function show_prompt {
   # Get username
   test -z "$USER" && user="$(whoami)" || user="$USER"
 
+  # Determine if in a subshell from within vim
+  local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
+
   # Set prompt
-  export PS1="$fgr$bg_color $user $fgr$host_bg $host $fgr$dir_bg \$(shorten_pwd) $(git_prompt)➤ $N"
+  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$dir_bg \$(shorten_pwd) $(git_prompt)➤ $N"
 }
 
 # Run this function every time the prompt is displayed to update the variables
