@@ -23,9 +23,6 @@ alias gh='git help'
 alias gha='git help -a'
 alias ghash='git branch --contains'
 alias gitcred='git config --global credential.helper "store --file ~/.git-credentials"'
-alias gl='git log --graph --decorate'
-alias gla='git log --oneline --all --source --decorate=short'
-alias glast='git show --stat=$(tput cols) --compact-summary'
 alias gld='git show'
 alias glf='git log --name-only'
 alias glg='git log --oneline --graph --decorate'
@@ -51,11 +48,11 @@ alias wip='git commit -am "WIP"'
 
 
 # Git Diff a File/Dir
-gdf() {
+function gdf() {
   if [[ -z "$1" ]]; then
     printf "\n\e[36mGit Diff a File (or Directory) between X commits ago and Y commits ago\e[0m\n\n"
     printf "\e[31mError: No inputs given.\e[0m\n\n"
-    printf "\e[1;34mSyntax: gdf FILE [X commits ago] [Y commits ago]\e[0m\n\n"
+    printf "\e[1;34mSyntax: gdf FILE/DIRECTORY [X commits ago] [Y commits ago]\e[0m\n\n"
     printf "Example: to see changes of a file between previous revision and current committed revision:\ngdf FILE 1 0\n\n"
     printf "Example: to see changes of a file between four commits ago and previous revision:\ngdf FILE 3 1\n\n"
     printf "Example: to use a wildcard, put it in single quotes:\ngdf 'customer*' 1 0\n\n"
@@ -65,14 +62,15 @@ gdf() {
     return
   fi
   local start end
-  test -z "$2" && start=1 || start="$2"
+  test -z "$2" && start=0 || start="$2"
   test -z "$3" && end=1 || end="$3"
-  git diff HEAD~$2 HEAD~$3 "$1"
+  echo "start: $start | end: $end"
+  git diff HEAD~$start HEAD~$end "$1"
 }
 
 
 # Set up (or fix) Git Flow
-gitflow() {
+function gitflow() {
     local git_flow_config="master\ndevelop\nfeature/\nbugfix/\nrelease/\nhotfix/\nsupport/\n\n\n"
     # Check to see if git flow is initialized and is correctly configured
     echo "Checking git flow config..."
@@ -96,7 +94,7 @@ gitflow() {
 
 
 # Check to see if there are new commits on the current branch
-check() {
+function check() {
 
   # Check if in a git repo
   git status &>/dev/null
@@ -164,7 +162,7 @@ check() {
 
 
 # Display Git Alias Menu
-gm() {
+function gm() {
   # Repeat String function
   repeat_string() {
     printf "%0.s$1" $(seq $2)
@@ -205,4 +203,40 @@ gm() {
   # Display menu
   printf "\n$(repeat_string ' ' $title_padding)$header$title$n\n"
   printf " %s\n%s\n %s\n\n" "$top_bar" "$help" "$bottom_bar"
+}
+
+# Warn user if a given alias previously exists
+function alias_check() {
+  alias "$1" &>/dev/null
+  if [[ $? -eq 0 ]]; then
+    printf "Warning you have an alias defined for $1 which conflicts with GitPrompt\n"
+    printf "Your alias will remain so the GitPrompt shortcut will not work.\n\n"
+  fi
+}
+
+# Display the last commit (or last n commits) with a summary of the file(s) modified
+alias_check glast
+function glast() {
+  if [[ $1 -gt 0 ]]; then
+    local count_prev=" -n $1"
+  fi
+  git show --stat=$(tput cols) --compact-summary $count_prev
+}
+
+# Commit log with colored output for last n commits
+alias_check gl
+function gl() {
+  if [[ $1 -gt 0 ]]; then
+    local count_prev=" -n $1"
+  fi
+  git log --graph --decorate $count_prev
+}
+
+# Commit log without graph (one line per commit) for last n commits
+alias_check gla
+function gla() {
+  if [[ $1 -gt 0 ]]; then
+    local count_prev=" -n $1"
+  fi
+  git log --oneline --all --source --decorate=short $count_prev
 }

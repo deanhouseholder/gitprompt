@@ -16,8 +16,9 @@ function shorten_pwd {
   test ${#PWD} -gt 40 && pwd | awk -F/ '{print "/"$2"/["(NF-4)"]/"$(NF-1)"/"$NF}' || pwd
 }
 
+# Display the git prompt
 function show_prompt {
-  # Define Colors for non-git part of prompt
+  # Define colors for non-git part of prompt
   local fgr="$(fg 253)"      # FG: White
   local root_bg="$(bg 130)"  # BG: Orange
   local user_bg="$(bg 24)"   # BG: Blue
@@ -33,7 +34,7 @@ function show_prompt {
   # Get username
   test -z "$USER" && user="$(whoami)" || user="$USER"
 
-  # Determine if in a subshell from within vim
+  # Determine if prompt is in a subshell from within vim
   local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
 
   # Set prompt

@@ -30,9 +30,9 @@
 | ghash              | Find the branch that contains a specific commit hash           |
 | gitcred            | Configure git's credential helper path to ~/.git-credentials   |
 | gitflow            | Set up (or fix) Git Flow                                       |
-| gl                 | Commit log with colored output                                 |
-| gla                | Commit log without graph (one line per commit)                 |
-| glast              | Last commit log with path of files modified and line graphs    |
+| gl                 | Commit log with colored output for last n commits              |
+| gla                | Commit log without graph (one line per commit) for n commits   |
+| glast              | Show last n commits with a summary of the file(s) modified     |
 | gld                | Full diff of log of latest commit (or any ref you specify)     |
 | glf                | Commit log which lists only the files affected                 |
 | glg                | Commit log with graph (one line per commit)                    |

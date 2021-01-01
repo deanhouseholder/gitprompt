@@ -6,17 +6,17 @@
 test -z "$TERM" && export TERM=xterm-256color
 
 # Print a foreground color that is properly-escaped for PS1 prompts
-fg() {
+function fg() {
   printf "\[\e[38;5;$1m\]"
 }
 
 # Print a background color that is properly-escaped for PS1 prompts
-bg() {
+function bg() {
   printf "\[\e[48;5;$1m\]"
 }
 
 # Reset the colors to default in the PS1 prompt
-norm() {
+function norm() {
   printf "\[\e[0m\]"
 }
 
@@ -32,7 +32,7 @@ git_no_remote="$(bg 254)"         # BG: Black
 # Displays the git part of the prompt
 # Specifically this function determines if a dir is a git repo
 # and if it is a submodule, get each nested status
-git_prompt() {
+function git_prompt() {
   # Check if current directory is a git repo
   git status &>/dev/null
   local gstatus=$?
