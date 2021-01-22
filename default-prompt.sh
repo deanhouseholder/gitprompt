@@ -38,6 +38,7 @@ function show_prompt {
   local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
 
   # Set prompt
+  export PS0="$N" # Reset color back to normal in case a colorizing command failed to reset
   export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$dir_bg \$(shorten_pwd) $(git_prompt)➤ $N"
 }
 

@@ -240,3 +240,9 @@ function gla() {
   fi
   git log --oneline --all --source --decorate=short $count_prev
 }
+
+alias_check gurl
+function gurl() {
+  local remote="$(git remote -v | head -n1 | awk '{print $2}')"
+  echo https://$(echo $remote | cut -d@ -f2 | sed -e 's/:/\//' -e 's/\.git//')
+}

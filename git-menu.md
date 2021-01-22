@@ -50,6 +50,7 @@
 | gu                 | Check for git updates (only for git bash)                      |
 | gud                | Pull latest updates in this branch (even if dirty)             |
 | gum                | Pull latest master (even from a dirty branch)                  |
+| gurl               | Display the best guess at the repo's HTTP url                  |
 | renamebranch       | Rename an existing branch                                      |
 | restore            | Restore latest stashed changes                                 |
 | stash              | Stash current changes                                          |
