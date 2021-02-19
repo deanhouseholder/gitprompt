@@ -28,7 +28,7 @@ alias glf='git log --name-only'
 alias glg='git log --oneline --graph --decorate'
 alias gmm='git merge master'
 alias gp='git pull'
-alias gps='git push'
+alias gps='gpu'
 alias gr='git checkout -- .'
 alias greset='gr && grm'
 alias grh='git reset --hard'
@@ -46,6 +46,16 @@ alias stash='git stash'
 alias uncommit='git reset HEAD^'
 alias wip='git commit -am "WIP"'
 
+# Git push with auto-detect/fix "no upstream branch" defined error
+function gpu() {
+  local out="$(git push $@)"
+  local upstream="$(echo "$out" | grep "git push --set-upstream")"
+  if [[ "$(echo $upstream | wc -l)" -eq 1 ]]; then
+    $upstream
+  else
+    echo "$out"
+  fi
+}
 
 # Git Diff a File/Dir
 function gdf() {
@@ -67,7 +77,6 @@ function gdf() {
   echo "start: $start | end: $end"
   git diff HEAD~$start HEAD~$end "$1"
 }
-
 
 # Set up (or fix) Git Flow
 function gitflow() {
@@ -159,7 +168,6 @@ function check() {
   printf "$output\n" | column -s "$s" -t
   echo
 }
-
 
 # Display Git Alias Menu
 function gm() {
