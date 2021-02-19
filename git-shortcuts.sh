@@ -4,7 +4,7 @@ alias branch='f(){ test -z "$1" && echo "No branch name given." && return 1; git
 alias cleanup='d=($(git branch --merged | grep -Ev develop\|master | sed -e "s/^\*//" -e "s/^ *//g" | uniq)); if [[ ${#d[@]} -gt 0 ]]; then echo ${d[@]} | xargs git branch -d; fi'
 alias g.='git add . && gs'
 alias ga='git add'
-alias gac='git add . && git commit && git push'
+alias gac='git add . && git commit && gpu'
 alias gad='git status -s | awk '"'"'{print $2}'"'"''
 alias gb='git branch -a'
 alias gback='git checkout -'
