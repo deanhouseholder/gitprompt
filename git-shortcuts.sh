@@ -183,7 +183,7 @@ function gm() {
 
   # Get the contents of git-menu.md
   local script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
-  local output="$(/bin/cat "$script_path/git-menu.md" | grep -E '^\|')"
+  local output="$(command cat "$script_path/git-menu.md" | grep -E '^\|')"
 
   # Determine widths of columns
   local first_line="$(echo "$output" | head -n1)"
