@@ -122,7 +122,7 @@ function check() {
   local s=$'\x01' # Obscure ASCII character as a separator
   local counter=-1
   local show_previous=3
-  local git_log_format="%h$s%cr$s%cd$s%s$s%cn$s"
+  local git_log_format="%h$s%cr$s%cd$s%s$s%an"
   local git_branch=$(git branch | grep '*' | cut -d' ' -f2)
   local not_yet_pulled="$(git log HEAD..origin/$git_branch --date=default --pretty=format:"$git_log_format" --decorate=full)"
   local local_commits="$(git log --date=default --pretty=format:"$git_log_format")"
@@ -139,7 +139,7 @@ function check() {
     if [[ $counter -eq 0 ]]; then
       local marker="Current"
     elif [[ $counter -lt 0 ]]; then
-       local marker="Newer ▲"
+      local marker="Newer ▲"
     else
       local marker="Older ▼"
     fi
