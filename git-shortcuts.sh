@@ -252,5 +252,26 @@ function gla() {
 alias_check gurl
 function gurl() {
   local remote="$(git remote -v | head -n1 | awk '{print $2}')"
-  echo https://$(echo $remote | cut -d@ -f2 | sed -e 's/:/\//' -e 's/\.git//')
+  if [[ "${remote:0:4}" != "http" ]]; then
+    remote="https://$(echo "${remote:4}" | sed '0,/:/s//\//')"
+  fi
+  echo "$remote" | sed -e 's/\.git//'
+}
+
+alias_check swap_remote
+function swap_remote() {
+  local remote_full="$(git remote -v | head -n1)"
+  local remote="$(echo "$remote_full" | awk '{print $2}')"
+  local origin="$(echo "$remote_full" | awk '{print $1}')"
+  local new_remote
+  if [[ "${remote:0:4}" == "http" ]]; then
+    new_remote="git@$(echo "${remote:8}" | sed '0,/\//s//:/')"
+  else
+    new_remote="https://$(echo "${remote:4}" | sed '0,/:/s//\//')"
+  fi
+  printf "Swapping origin: $remote\nFor:             $new_remote\n"
+  git remote remove $origin
+  git remote add $origin $new_remote
+  printf "Done\n\nYour new remotes are:\n"
+  git remote -v
 }
