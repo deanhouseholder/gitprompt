@@ -144,9 +144,9 @@ function git_display_branch {
   # Check if the branch is ahead or behind of repo
   local git_status="$(git status | grep 'Your branch')"
   if [[ "$git_status" =~ .*is\ behind.* ]]; then
-    output+="«$(printf "$git_status" | sed -e 's~[^0-9]*\([0-9]\+\).*~\1~g')"
+    output+="«$(printf "$git_status" | sed -E -e 's~[^0-9]*([0-9]+).*~\1~g')"
   elif [[ "$git_status" =~ .*is\ ahead.* ]]; then
-    output+="»$(printf "$git_status" | sed -e 's~[^0-9]*\([0-9]\+\).*~\1~g')"
+    output+="»$(printf "$git_status" | sed -E -e 's~[^0-9]*([0-9]+).*~\1~g')"
   fi
 
   # Check for Git Remotes
