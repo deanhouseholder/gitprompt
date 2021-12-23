@@ -1,18 +1,20 @@
 # Git Aliases
 alias g='git'
+alias branch='f(){ test -z "$1" && echo "No branch name given." && return 1; git fetch &>/dev/null; git checkout -b $1 &>/dev/null || git checkout $1 &>/dev/null; git branch -u origin/$1 $1 &>/dev/null; git push --set-upstream origin $1 &>/dev/null; }; f'
+alias cleanup='d=($(git branch --merged | grep -Ev develop\|master | sed -e "s/^\*//" -e "s/^ *//g" | uniq)); if [[ ${#d[@]} -gt 0 ]]; then echo ${d[@]} | xargs git branch -d; fi'
 alias g.='git add . && gs'
 alias ga='git add'
 alias gac='git add . && git commit && gpu'
 alias gad='git status -s | awk '"'"'{print $2}'"'"''
 alias gb='git branch -a'
-alias gback='git checkout -'
+alias gback='git checkout - >/dev/null'
 alias gc='git commit'
 alias gca='git commit -a --amend -C HEAD'
 alias gcb='f(){ git checkout bugfix/$1 2>/dev/null; git branch -u origin/bugfix/$1 bugfix/$1 >/dev/null; }; f'
 alias gcd='git checkout develop'
 alias gcf='f(){ git checkout feature/$1 2>/dev/null; git branch -u origin/feature/$1 feature/$1 >/dev/null; }; f'
 alias gch='f(){ git checkout hotfix/$1 2>/dev/null; git branch -u origin/hotfix/$1 hotfix/$1 >/dev/null; }; f'
-alias gcm='git checkout master'
+alias gcm='git checkout master >/dev/null'
 alias gcr='f(){ git checkout release/$1 2>/dev/null; git branch -u origin/release/$1 release/$1 >/dev/null; }; f'
 alias gcs='f(){ git checkout support/$1 2>/dev/null; git branch -u origin/support/$1 support/$1 >/dev/null; }; f'
 alias gd='git diff'
@@ -124,17 +126,19 @@ function check() {
 # Git Branch Remove (local and remote)
 alias_check gbr
 function gbr() {
-  if [[ -z "$1" ]]; then
-    printf "\nSyntax: gbr [branch_to_delete]\n\n";
-    return 1;
-  fi;
-  read -p "Are you sure you want to delete branch $1? [y/N] " p;
+  test -z "$1" && printf "\nSyntax: gbr [branch_to_delete]\n\n" && return 1
+  local git_branch=$(git branch | grep '*' | cut -d' ' -f2)
+  test "$git_branch" == "$1" && printf "\nError: Requested branch to delete ($1) is currently checked out.\n\n" && return 1
+  echo
+  read -p "Warning! Are you sure you want to delete branch: $1? [y/N] " p
   if [[ "$p" =~ [Yy] ]]; then
-    git branch -d $1;
-    git push origin --delete $1;
+    git branch -d $1 &>/dev/null
+    test $? -eq 0 && printf "\nRemoved branch locally.\n" || printf "\nFailed to remove branch locally.\n"
+    git push origin --delete $1 &>/dev/null
+    test $? -eq 0 && printf "Removed branch on origin.\n\n" || printf "Failed to remove branch on origin.\n\n"
   else
-    printf "\nCanceled.\n\n";
-  fi;
+    printf "\nCanceled.\n\n"
+  fi
 }
 
 # Git Diff a File/Dir
