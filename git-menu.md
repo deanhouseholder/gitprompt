@@ -13,6 +13,7 @@
 | gad                | Display a list of new files (unknown to git)                   |
 | gb                 | List all branches                                              |
 | gback              | Switch back the previous branch                                |
+| gbr                | Remove branch both locally and remotely                        |
 | gc                 | Shortcut to "git commit"                                       |
 | gca                | Commit the latest changes as an ammendment to the last commit  |
 | gcb                | Checkout an existing bugfix branch (assumes "bugfix/")         |
@@ -43,6 +44,7 @@
 | greset             | Full reset of current branch to last commit including deletes  |
 | grh                | Hard reset of current branch (or any ref you specify)          |
 | grm                | Remove all new/untracked files (unknown to git)                |
+| gro                | Replace the origin Remote for a new repo url                   |
 | gs                 | Git Status (ignoring submodules for speed)                     |
 | gsa                | Git Status of all files/submodules                             |
 | gss                | Get the status of all submodules                               |
