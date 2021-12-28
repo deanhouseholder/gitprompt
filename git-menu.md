@@ -15,7 +15,7 @@
 | gback        | Switch back the previous branch                              |
 | gbr          | Remove branch both locally and remotely                      |
 | gc           | Shortcut to "git commit"                                     |
-| gca          | Commit the latest changes as an ammendment to the last commit |
+| gca          | Commit the latest changes as an amendment to the last commit |
 | gcb          | Checkout an existing bugfix branch (assumes "bugfix/")       |
 | gcd          | Checkout the develop branch                                  |
 | gcf          | Checkout an existing feature branch (assumes "feature/")     |

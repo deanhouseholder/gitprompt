@@ -1,6 +1,8 @@
 # Bash Git Prompt
 
-<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-screenshot.png" align="left">
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-screenshot.png" align="left"><br clear="left">
+
+
 
 ## Description
 
@@ -20,14 +22,15 @@ Bash prompt function to support display of git branch name along with:
 ## Examples
 
 Prompt changes branch name to red (or any other color) when the repo is modified (or "dirty").
-<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-example-modified.png" align="left">
+
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-example-modified.png" align="left"><br clear="left">
 
 
+When the repo is in different statuses, different symbols are used to show the status. 
 
+For example, when you have stashed some code,  it will appear as:
 
-
-When the repo is in different statuses, different symbols are used to show the status. Example when code is stashed it will appear as:
-<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-stashed.png" align="left">
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-stashed.png" align="left"><br clear="left">
 
 
 
@@ -84,7 +87,7 @@ cp ~/gitprompt/default-prompt.sh ~/gitprompt/custom-prompt.sh
 
 Also included are a great collection of Git Shortcuts. See the [git-menu.md](git-menu.md) to see the full list. You can run the helper alias `gm` (short for "git menu"), at any time to see the full list of git shortcuts on your terminal.
 
-<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-shortcuts-menu.png" align="left">
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-shortcuts-menu.png" align="left"><br clear="left">
 
 
 ### Bash Completion for Git
