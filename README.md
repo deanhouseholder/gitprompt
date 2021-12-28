@@ -1,8 +1,10 @@
-# BASH Git Prompt
+# Bash Git Prompt
+
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-screenshot.png" align="left">
 
 ## Description
 
-BASH prompt function to support display of git branch name along with:
+Bash prompt function to support display of git branch name along with:
 - 256 color support for both background and foreground
 - Display branch name in different colors for dirty/clean statuses
 - Display additional indicators for various git statuses:
@@ -15,6 +17,21 @@ BASH prompt function to support display of git branch name along with:
   - Detects if you are in the .git directory
   - Detects Bare repo
 
+## Examples
+
+Prompt changes branch name to red (or any other color) when the repo is modified (or "dirty").
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-example-modified.png" align="left">
+
+
+
+
+
+When the repo is in different statuses, different symbols are used to show the status. Example when code is stashed it will appear as:
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-stashed.png" align="left">
+
+
+
+Below is a list of the statuses supported.
 
 
 ## Symbol Key
@@ -47,7 +64,7 @@ BASH prompt function to support display of git branch name along with:
 source ~/gitprompt/default-prompt.sh
 ```
 
-3) If you're happy with the defaults, add this to one of your bash startup files: (`.bashrc`, `.bash_profile`, `.profile`)
+3) If you're happy with the defaults, add this to one of your Bash startup files: (`.bashrc`, `.bash_profile`, `.profile`)
 
 ```shell
 echo "source ~/gitprompt/default-prompt.sh" >> ~/.bashrc
@@ -65,10 +82,12 @@ cp ~/gitprompt/default-prompt.sh ~/gitprompt/custom-prompt.sh
 
 ### Git Shortcuts
 
-Also included are a great collection of Git Shortcuts. See the [git-menu.md](git-menu.md) to see the full list. You can run `gm` at any time to see the full list of git shortcuts on your terminal.
+Also included are a great collection of Git Shortcuts. See the [git-menu.md](git-menu.md) to see the full list. You can run the helper alias `gm` (short for "git menu"), at any time to see the full list of git shortcuts on your terminal.
+
+<img src="https://deanhouseholder.com/images/gitprompt/gitprompt-shortcuts-menu.png" align="left">
 
 
-### Bash Git Completion
+### Bash Completion for Git
 
 This allows you to use the `tab` key to auto-fill many git options. For example you can type `git ` and press tab twice to display:
 ```
@@ -97,6 +116,10 @@ set-branches   set-head       set-url        show           update
 ```
 
 And finally you can type `git remote add ` and press tab twice to autofill `origin`.
+
+## How to contribute
+
+Pull requests are welcomed and appreciated!
 
 
 ## To-Do
