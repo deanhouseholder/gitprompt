@@ -81,7 +81,7 @@ function check() {
   local not_yet_pulled="$(git log HEAD..origin/$git_branch --date=default --pretty=format:"$git_log_format" --decorate=full)"
   local local_commits="$(git log --date=default --pretty=format:"$git_log_format")"
   local count_available=$(echo -n "$not_yet_pulled" | grep -c '^')
-  local output=$(printf "Timeline${s}Hash${s}Committed${s}Author${s}Commit Message$n\n\n")
+  local output=$(printf "Timeline \b${s}Hash${s}Committed${s}Author${s}Commit Message$n\n\n")
   test $count_available -eq 1 && local is_or_are="is" || local is_or_are="are"
 
   # Display status line
@@ -91,7 +91,7 @@ function check() {
   print_git_log() {
     test -z "$1" && return
     if [[ $counter -eq 0 ]]; then
-      local marker="Current"
+      local marker="Current \b" # \b is a hack to get columns to line up due to multi-byte characters for Newer and Older arrows
     elif [[ $counter -lt 0 ]]; then
       local marker="Newer ▲"
     else
