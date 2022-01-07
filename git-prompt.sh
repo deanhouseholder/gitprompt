@@ -29,6 +29,9 @@ git_subdir="$(fg 251)"            # FG: Light Gray
 git_submark="$(fg 166)"           # FG: Orange
 git_no_remote="$(bg 254)"         # BG: Black
 
+# Define Git version
+# git_version="$(git --version)"
+
 # Displays the git part of the prompt
 # Specifically this function determines if a dir is a git repo
 # and if it is a submodule, get each nested status
@@ -142,17 +145,18 @@ function git_display_branch {
   local output=''
 
   # Check if the branch is ahead or behind of repo
-  local remote="$(git branch -vv --format='%(upstream:remotename)')"
-  IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote"/"$branch"..."$branch")"
-  if [[ ${ahead_behind[0]} -ne 0 ]]; then
-    output+="«${ahead_behind[0]}"
-  elif [[ ${ahead_behind[1]} -ne 0 ]]; then
-    output+="»${ahead_behind[1]}"
-  fi
-
-  # Check for Git Remotes
-  local remotes=$(git remote -v | wc -l)
-  if [[ "$remotes" -eq 0 ]]; then
+  # local remote="$(git branch --show-current -vv --format='%(upstream:remotename)')" (if Git version > 2.22)
+  local remote="$(git branch -vv | grep -e '^*')"
+  if [[ $remote =~ \[ ]]; then
+    local remote_name="$(echo $remote | cut -d'[' -f2 | cut -d'/' -f1)"
+    IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote_name"/"$branch"..."$branch")"
+    if [[ ${ahead_behind[0]} -ne 0 ]]; then
+      output+="«${ahead_behind[0]}"
+    elif [[ ${ahead_behind[1]} -ne 0 ]]; then
+      output+="»${ahead_behind[1]}"
+    fi
+  else
+    # No Remotes found
     output+="¤"
   fi
 
