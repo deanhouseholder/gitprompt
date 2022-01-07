@@ -106,23 +106,23 @@ function git_prompt() {
 # Displays the branch name along with status/color
 function git_display_branch {
   # Determine BG color
-  if [[ -z "$(git status -s)" ]]; then
+  if [[ "$(git check-ignore .)" == "." ]]; then
+    printf "$git_ignored"                             # Ignored directory
+  elif [[ -z "$(git status -s)" ]]; then
     printf "$git_clean"                               # Clean directory
-  elif [[ "$(git check-ignore .)" == "." ]]; then
-    printf "${git_ignored}"                           # Ignored directory
   else
     printf "$git_dirty"                               # Dirty directory
   fi
 
+  # Get current branch name
+  local branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+
   # Check if detached head
-  local head_check="$(git branch)"
-  if [[ "$head_check" =~ detached ]]; then
-    printf "$head_check" | grep -v 'detached' | awk '{print $1}' | tr -d $'\n' # Branch name
-    printf "°"
-    printf "$head_check" | grep '*.*detached' | sed -E -e 's/\* \(HEAD detached at ([^\)]+)\)/\1/' | tr -d $'\n' # Head-ish
+  if [[ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" == "HEAD" ]]; then
+    printf "HEAD°$(git show -s --pretty=%h HEAD)"
   else
     # Display Branch name
-    printf "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+    printf "$branch"
   fi
 
   if [[ -f "$git_dir/MERGE_HEAD" ]]; then
@@ -142,11 +142,12 @@ function git_display_branch {
   local output=''
 
   # Check if the branch is ahead or behind of repo
-  local git_status="$(git status | grep 'Your branch')"
-  if [[ "$git_status" =~ .*is\ behind.* ]]; then
-    output+="«$(printf "$git_status" | sed -E -e 's~[^0-9]*([0-9]+).*~\1~g')"
-  elif [[ "$git_status" =~ .*is\ ahead.* ]]; then
-    output+="»$(printf "$git_status" | sed -E -e 's~[^0-9]*([0-9]+).*~\1~g')"
+  local remote="$(git remote)"
+  IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote"/"$branch"..."$branch")"
+  if [[ ${ahead_behind[0]} -ne 0 ]]; then
+    output+="«${ahead_behind[0]}"
+  elif [[ ${ahead_behind[1]} -ne 0 ]]; then
+    output+="»${ahead_behind[1]}"
   fi
 
   # Check for Git Remotes
