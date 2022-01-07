@@ -142,7 +142,7 @@ function git_display_branch {
   local output=''
 
   # Check if the branch is ahead or behind of repo
-  local remote="$(git remote)"
+  local remote="$(git branch -vv --format='%(upstream:remotename)')"
   IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote"/"$branch"..."$branch")"
   if [[ ${ahead_behind[0]} -ne 0 ]]; then
     output+="«${ahead_behind[0]}"
