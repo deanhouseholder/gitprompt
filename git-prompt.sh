@@ -155,6 +155,10 @@ function git_display_branch {
     elif [[ ${ahead_behind[1]} -ne 0 ]]; then
       output+="»${ahead_behind[1]}"
     fi
+  elif [[ $remote =~ detached ]]; then # Detached head
+    if [[ -z "$(git remote -v)" ]]; then # Check for any remotes
+      output+="¤"
+    fi
   else
     # No Remotes found
     output+="¤"
