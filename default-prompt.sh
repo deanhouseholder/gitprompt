@@ -18,6 +18,15 @@ function shorten_pwd {
 
 # Display the git prompt
 function show_prompt {
+  # Check status of "set -x" mode
+  if [[ ${-//[^x]/} == "x" ]]; then
+    # "set -x" mode is enabled disable for now and re-enable after prompt is displayed
+    set +x
+    set_x=Y
+  else
+    set_x=N
+  fi
+
   # Define colors for non-git part of prompt
   local fgr="$(fg 253)"      # FG: White
   local root_bg="$(bg 130)"  # BG: Orange
@@ -38,7 +47,12 @@ function show_prompt {
   local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
 
   # Set prompt
-  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$dir_bg \$(shorten_pwd) $(git_prompt)➤ $N"
+  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$dir_bg $(shorten_pwd) $(git_prompt)➤ $N"
+
+  # Restore "set -x" status if set
+  if [[ $set_x == Y ]]; then
+    set -x
+  fi
 }
 
 # Run this function every time the prompt is displayed to update the variables
