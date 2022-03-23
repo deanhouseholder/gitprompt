@@ -70,9 +70,27 @@ function check() {
   test $? -ne 0 && printf "\rFailed to check for updates from the git repo.\n\n" && return 1
 
   # Define variables
-  local header="\e[1m\e[32m"
-  local message="\e[1m\e[36m"
-  local details="\e[33m"
+  if [[ $(tput colors) -eq 256 ]]; then
+    # 256 color support
+    local c_header="\e[4m\e[38;5;15m"
+    local c_message="\e[1;80m"
+    local c_hash="\e[38;5;178m"
+    local c_committed="\e[38;5;110m"
+    local c_author="\e[38;5;85m"
+    local c_current="\e[38;5;15m"
+    local c_newer="\e[38;5;185m"
+    local c_older="\e[38;5;245m"
+  else
+    # 16 colors only
+    local c_header="\e[1;32m"
+    local c_message="\e[1;36m"
+    local c_hash="\e[0;33m"
+    local c_committed="\e[1;34m"
+    local c_author="\e[1;36m"
+    local c_current="\e[1;33m"
+    local c_newer="\e[1;15m"
+    local c_older="\e[37m"
+  fi
   local n="\e[m" # Reset to normal
   local s=$'\x01' # Obscure ASCII character as a separator
   local counter=-1
@@ -82,36 +100,39 @@ function check() {
   local not_yet_pulled="$(git log HEAD..origin/$git_branch --date=default --pretty=format:"$git_log_format" --decorate=full)"
   local local_commits="$(git log --date=default --pretty=format:"$git_log_format")"
   local count_available=$(echo -n "$not_yet_pulled" | grep -c '^')
-  local output=$(printf "Timeline \b${s}Hash${s}Committed${s}Author${s}Commit Message$n\n\n")
+  local output=$(printf "Timeline \b${s}Hash${s}Committed${s}Author${s}Commit Message$n")
   test $count_available -eq 1 && local is_or_are="is" || local is_or_are="are"
 
   # Display status line
-  printf "\rThere $is_or_are $message$count_available$n new updates available on the $message$git_branch$n branch which can be pulled.\n\n$header"
+  printf "\rThere $is_or_are $c_message$count_available$n new updates available on the $c_message$git_branch$n branch which can be pulled.\n\n$c_header"
 
   # Function to display a single line with the proper formatting
   print_git_log() {
     test -z "$1" && return
     if [[ $counter -eq 0 ]]; then
-      local marker="Current \b" # \b is a hack to get columns to line up due to multi-byte characters for Newer and Older arrows
+      local marker="${c_current}Current \b$n" # \b is a hack to get columns to line up due to multi-byte characters for Newer and Older arrows
     elif [[ $counter -lt 0 ]]; then
-      local marker="Newer ▲"
+      local marker="${c_newer}Newer ▲$n"
     else
-      local marker="Older ▼"
+      local marker="${c_older}Older ▼$n"
     fi
     IFS="$s" read -r -a column <<< "$1"
     local hash="${column[0]}"
     local committed="${column[1]}"
     local commit_msg="${column[3]}"
     local author="${column[4]}"
-    output="$(printf "$output\n" && printf "%s$s%s$s%s$s%s$s%s\n\n" "$marker" "$hash" "$committed" "$author" "$commit_msg")"
+    output="$( \
+      printf "$output\n" && \
+      printf "%s$s$c_hash%s$n$s$c_committed%s$n$s$c_author%s$n$s%s\n\n" "$marker" "$hash" "$committed" "$author" "$commit_msg" \
+    )"
   }
 
-  # Display not yet pulled commits
+  # Display Newer commits
   while read line; do
     print_git_log "$line"
   done <<< "$not_yet_pulled"
 
-  # Display local commits
+  # Display Current and Older commits
   counter=0
   while read line; do
     test $counter -eq $show_previous && break
