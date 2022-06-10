@@ -181,7 +181,7 @@ function gdf() {
   local start end
   test -z "$2" && start=0 || start="$2"
   test -z "$3" && end=1 || end="$3"
-  echo "start: $start | end: $end"
+  # echo "start: $start | end: $end"
   git diff HEAD~$start HEAD~$end "$1"
 }
 
