@@ -1,4 +1,3 @@
-#!/bin/bash
 ## Git Prompt
 # Author: Dean Householder <deanhouseholder@gmail.com>
 # See README.md for more details
