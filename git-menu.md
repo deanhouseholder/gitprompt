@@ -43,6 +43,7 @@
 | gps          | Shortcut for "git push"                                        |
 | gr           | Reset all tracked files back to last commit (replaces changes) |
 | greset       | Full reset of current branch to last commit including deletes  |
+| gru          | Remove all unstaged changes                                    |
 | grh          | Hard reset of current branch (or any ref you specify)          |
 | grm          | Remove all new/untracked files (unknown to git)                |
 | gro          | Replace the origin Remote for a new repo url                   |

@@ -32,6 +32,8 @@ alias gp='git pull'
 alias gps='gpu'
 alias gr='git checkout -- .'
 alias greset='gr && grm'
+alias gru='git checkout . && git clean -df'
+alias nah='greset'
 alias grh='git reset --hard'
 alias grm='gad | xargs rm -r 2>/dev/null'
 alias gs='clear && git status --ignore-submodules 2>/dev/null'
@@ -91,7 +93,7 @@ function check() {
     local c_newer="\e[1;15m"
     local c_older="\e[37m"
   fi
-  local n="\e[m" # Reset to normal
+  local n="\e[0m" # Reset to normal
   local s=$'\x01' # Obscure ASCII character as a separator
   local counter=-1
   local show_previous=3
