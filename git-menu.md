@@ -24,6 +24,7 @@
 | gcr          | Checkout an existing release branch (assumes "release/")       |
 | gcs          | Checkout an existing support branch (assumes "support/")       |
 | gd           | Shortcut for "git diff"                                        |
+| gds          | Diff of the staged changes                                     |
 | gdw          | Shortcut for "git diff" that ignores whitespace                |
 | gdf          | Get diff of a file/dir between x commits ago and y commits ago |
 | gf           | Shortcut for "git fetch"                                       |
