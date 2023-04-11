@@ -110,7 +110,7 @@ function git_prompt() {
 # Displays the branch name along with status/color
 function git_display_branch {
   # Determine BG color
-  if [[ "$(git check-ignore .)" == "." ]]; then
+  if [[ "$(git check-ignore . 2>/dev/null)" == "." ]]; then
     printf "%s" "$git_ignored"                        # Ignored directory
   elif [[ -z "$(git status -s)" ]]; then
     printf "%s" "$git_clean"                          # Clean directory
@@ -154,7 +154,7 @@ function git_display_branch {
   if [[ $remote =~ \[ ]]; then
     local remote_name
     remote_name="$(echo "$remote" | cut -d'[' -f2 | cut -d'/' -f1)"
-    IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote_name"/"$branch"..."$branch")"
+    IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote_name"/"$branch"..."$branch" 2>/dev/null)"
     if [[ ${ahead_behind[0]} -ne 0 ]]; then
       output+="«${ahead_behind[0]}"
     elif [[ ${ahead_behind[1]} -ne 0 ]]; then
