@@ -123,8 +123,8 @@ function git_display_branch {
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 
   # Check if detached head
-  if [[ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" == "HEAD" ]]; then
-    printf "HEAD°%s" "$(git show -s --pretty=%h HEAD)"
+  if [[ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD 2>/dev/null)" == "HEAD" ]]; then
+    printf "HEAD°%s" "$(git show -s --pretty=%h HEAD 2>/dev/null)"
   else
     # Display Branch name
     printf "%s" "$branch"
