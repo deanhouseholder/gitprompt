@@ -6,27 +6,27 @@
 test -z "$TERM" && export TERM=xterm-256color
 
 # Print a foreground color that is properly-escaped for PS1 prompts
-function fg() {
+function gp_fg() {
   printf "\[\e[38;5;%sm\]" "$1"
 }
 
 # Print a background color that is properly-escaped for PS1 prompts
-function bg() {
+function gp_bg() {
   printf "\[\e[48;5;%sm\]" "$1"
 }
 
 # Reset the colors to default in the PS1 prompt
-function norm() {
+function gp_norm() {
   printf "\[\e[0m\]"
 }
 
 # Define Git Prompt Colors
-git_style="$(fg 15)$(bg 17)"      # FG: White, BG: Dark Blue-Purple
-git_clean="$(fg 46)"              # FG: Green
-git_dirty="$(fg 196)"             # FG: Red
-git_ignored="$(fg 240)"           # FG: Dark Gray
-git_subdir="$(fg 251)"            # FG: Light Gray
-git_submark="$(fg 166)"           # FG: Orange
+git_style="$(gp_fg 15)$(gp_bg 17)"   # FG: White, BG: Dark Blue-Purple
+git_clean="$(gp_fg 46)"              # FG: Green
+git_dirty="$(gp_fg 196)"             # FG: Red
+git_ignored="$(gp_fg 240)"           # FG: Dark Gray
+git_subdir="$(gp_fg 251)"            # FG: Light Gray
+git_submark="$(gp_fg 166)"           # FG: Orange
 
 # Define Git version
 # git_version="$(git --version)"

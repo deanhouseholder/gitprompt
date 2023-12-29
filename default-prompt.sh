@@ -28,13 +28,13 @@ function show_prompt {
   fi
 
   # Define colors for non-git part of prompt
-  local fgr="$(fg 253)"      # FG: White
-  local root_bg="$(bg 130)"  # BG: Orange
-  local user_bg="$(bg 24)"   # BG: Blue
-  local dir_bg="$(bg 236)"   # BG: Dark Gray
-  local host_bg="$(bg 30)"   # BG: Blue-Green
-  local vim_bg="$(bg 90)"    # BG: Purple
-  local N="$(norm)"          # Reset styles
+  local fgr="$(gp_fg 253)"      # FG: White
+  local root_bg="$(gp_bg 130)"  # BG: Orange
+  local user_bg="$(gp_bg 24)"   # BG: Blue
+  local dir_bg="$(gp_bg 236)"   # BG: Dark Gray
+  local host_bg="$(gp_bg 30)"   # BG: Blue-Green
+  local vim_bg="$(gp_bg 90)"    # BG: Purple
+  local N="$(gp_norm)"          # Reset styles
   local bg_color user
 
   # Determine if user is root or not
