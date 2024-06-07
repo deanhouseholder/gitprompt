@@ -148,8 +148,9 @@ function git_display_branch {
   output=""
 
   # Check if the branch is ahead or behind of repo
-  # local remote="$(git branch --show-current -vv --format='%(upstream:remotename)')" (if Git version > 2.22)
   local remote
+  # TODO: If checked out to a new branch created locally and no upstream remote defined, this fails
+  # remote="$(git branch --show-current -vv --format='%(upstream:remotename)')" (if Git version > 2.22)
   remote="$(git branch -vv | grep -e '^\*')"
   if [[ $remote =~ \[ ]]; then
     local remote_name

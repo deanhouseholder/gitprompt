@@ -323,3 +323,10 @@ function gro() {
   printf "Done\n\nYour new remotes are:\n"
   git remote -v
 }
+
+# Rebase all commits in the branch
+alias_check rebase
+function rebase() {
+  test -z "$1" && branch=master || branch="$1"
+  git rebase -i $(git merge-base $branch@{u} HEAD)
+}

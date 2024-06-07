@@ -56,6 +56,7 @@
 | gud          | Pull latest updates in this branch (even if dirty)             |
 | gum          | Pull latest master (even from a dirty branch)                  |
 | gurl         | Display the best guess at the repo's HTTP url                  |
+| rebase       | Interactive rebase all commits in your branch                  |
 | renamebranch | Rename an existing branch                                      |
 | restore      | Restore latest stashed changes                                 |
 | stash        | Stash current changes                                          |
