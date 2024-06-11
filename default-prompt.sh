@@ -18,14 +18,9 @@ function shorten_pwd {
 
 # Display the git prompt
 function show_prompt {
-  # Check status of "set -x" mode
-  if [[ ${-//[^x]/} == "x" ]]; then
-    # "set -x" mode is enabled disable for now and re-enable after prompt is displayed
-    set +x
-    set_x=Y
-  else
-    set_x=N
-  fi
+  # Check status of "set -x" xtrace mode
+  # If xtrace mode is set, disable it for the prompt, and re-enable it afterwards
+  [[ ${-//[^x]/} == "x" ]] && set_x=Y && set +x || set_x=N
 
   # Define colors for non-git part of prompt
   local fgr="$(gp_fg 253)"      # FG: White
@@ -56,7 +51,11 @@ function show_prompt {
 }
 
 # Run this function every time the prompt is displayed to update the variables
-PROMPT_COMMAND="show_prompt"
+if [[ -z "$PROMPT_COMMAND" ]]; then
+  PROMPT_COMMAND="show_prompt"
+elif [[ ! "$PROMPT_COMMAND" =~ show_prompt ]]; then
+  PROMPT_COMMAND="$PROMPT_COMMAND; show_prompt"
+fi
 
 # Run the function once to pre-load variables
 show_prompt
