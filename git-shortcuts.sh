@@ -88,15 +88,13 @@ restore() {
     stash_desc=$(echo "$stash_info" | cut -d: -f2-)
 
     menu_entry="Stash $stash_count: - $stash_desc"$'\n'
-    menu_entry="$menu_entry$(git stash show --compact-summary $stash_ref)"
+    menu_entry="$menu_entry$(git stash show --compact-summary --color=always $stash_ref)"
     menu=("${menu[@]}" "$menu_entry")
     let stash_count++
   done
 
   header="Select a stash to restore or press ESC to cancel"
-  menu_bg=""
-  menu_padding=1
-  menu "$header" "menu"
+  menu_padding=1 menu_bg="" menu "$header" "menu"
 
   # If there was an error, display it and return
   if [[ "$menu_status" -ne 0 ]]; then

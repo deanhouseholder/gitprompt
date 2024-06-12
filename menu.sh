@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # MENU
 #
@@ -25,13 +24,16 @@
 #   $menu_marker   = You can override the default marker character
 #   $menu_fg       = You can override the default highlighted entries' text color
 #   $menu_bg       = You can override the default highlighted entries' background color
+#   $menu_padding  = Set to 1 to add a blank space between menu entries
 #
 menu() {
   # Main Menu function
   main_menu() {
-    local default_marker default_highlight_fg default_highlight_bg i input key selected menu_array menu_fg menu_bg menu_marker header
+    local LANG default_marker default_highlight_fg default_highlight_bg i input key selected
+    local menu_array menu_fg menu_bg menu_marker header
 
-    default_marker=$(echo -e "\u27A4") # marker char: ➤
+    LANG=en_US.UTF-8                   # Support UTF-8 chars
+    default_marker=$(echo -e "\u27A4") # Marker character: ➤
     default_highlight_fg="\e[38;5;15m" # White text
     default_highlight_bg="\e[48;5;4m"  # Blue background
 
@@ -56,9 +58,10 @@ menu() {
       local menu_array=("$@")
     else
       # If only one remaining string was passed, check to see if it points to an existing array variable
-      local tmp=$1
-      if declare -p $tmp &>/dev/null; then
-        local -n menu_array=$tmp
+      if declare -p "${1}" 2>/dev/null | grep -q '^declare \-a'; then
+        # An array by that name does exist
+        local tmp=$1[@]               # Do a trick to fetch it (compatible with older Bash versions)
+        local menu_array=("${!tmp}")
       else
         local menu_array=("$1")
       fi
@@ -72,7 +75,7 @@ menu() {
       menu_fg="$default_highlight_fg"
     fi
     if [[ ! -v menu_bg ]]; then
-      menu_fg="$default_highlight_bg"
+      menu_bg="$default_highlight_bg"
     fi
 
     # Display the menu with the selected item highlighted
@@ -90,7 +93,6 @@ menu() {
         test "$menu_padding" == 1 && echo
       done
     }
-
 
     # Main loop
     while true; do
@@ -138,8 +140,8 @@ menu() {
   tput clear 2>/dev/null || clear
   export menu_msg menu_selected menu_status
 
-  menu_msg="$(main_menu "$@")"
-  menu_selected=$?
+  menu_msg="$(main_menu "$@")" # Call main_menu() function
+  menu_selected=$?             # Return value is the selected menu entry (0-based)
 
   if [[ -z "$menu_msg" ]]; then
     # Success
