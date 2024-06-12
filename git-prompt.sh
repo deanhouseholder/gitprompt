@@ -36,16 +36,15 @@ git_submark="$(gp_fg 166)"           # FG: Orange
 # and if it is a submodule, get each nested status
 function git_prompt() {
   # Check if current directory is a git repo
-  git status &>/dev/null
+  git_dir="$(git rev-parse --git-dir &>/dev/null)"
   local gstatus=$?
 
   if [[ $gstatus -eq 0 ]]; then
+    # User is currently inside a git repo directory
+    export git_dir
+
     # Print starting block
     printf "%s [" "$git_style"
-
-    # User is currently inside a git repo directory
-    git_dir=$(git rev-parse --git-dir)
-    export git_dir
 
     # Detect if in a submodule repo directory
     # When in a submodule repo dir the `git rev-parse --git-dir` command will contain '.git/modules/'

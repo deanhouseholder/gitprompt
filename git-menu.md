@@ -39,6 +39,7 @@
 | gld          | Full diff of log of latest commit (or any ref you specify)     |
 | glf          | Commit log which lists only the files affected                 |
 | glg          | Commit log with graph (one line per commit)                    |
+| glu          | Git log for un-pulled commits                                  |
 | gmm          | Shortcut for "git merge master"                                |
 | gp           | Shortcut for "git pull"                                        |
 | gps          | Shortcut for "git push"                                        |

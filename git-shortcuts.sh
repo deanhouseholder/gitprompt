@@ -28,6 +28,7 @@ alias gitcred='git config --global credential.helper "store --file ~/.git-creden
 alias gld='git show'
 alias glf='git log --name-only'
 alias glg='git log --oneline --graph --decorate'
+alias glu='git log HEAD..origin/$(git branch --show-current)'
 alias gmm='git merge master'
 alias gp='git pull'
 alias gps='gpu'
@@ -45,8 +46,6 @@ alias gu='git update-git-for-windows'
 alias gud='git stash; git pull; git stash pop'
 alias gum='git stash; git checkout master; git pull; git checkout -; git stash pop'
 alias renamebranch='git branch -m'
-alias restore='git stash pop'
-alias stash='git stash'
 alias uncommit='git reset HEAD^'
 alias wip='git commit -am "WIP"'
 
@@ -58,6 +57,119 @@ function alias_check() {
     printf "Your alias will remain so the GitPrompt shortcut will not work.\n\n"
   fi
 }
+
+# Stash with optional name
+alias_check stash
+stash() {
+  test -z "$1" && git stash || git stash save "$*"
+}
+
+alias_check restore
+restore() {
+  # Load the menu function
+  source "$(dirname "$BASH_SOURCE")/menu.sh"
+
+  # Get the full stash list with references and descriptions
+  readarray -t stash_list < <(git stash list)
+
+  # Check if the stash list is empty
+  if [ ${#stash_list[@]} -eq 0 ]; then
+    echo "No stashes found."
+    return 0
+  fi
+
+  # Loop through each stash found
+  stash_count=0
+  menu=()
+  for stash_info in "${stash_list[@]}"; do
+    # Extract the stash reference using cut
+    stash_ref=$(echo "$stash_info" | cut -d: -f1)
+    # The rest of the line is the stash description
+    stash_desc=$(echo "$stash_info" | cut -d: -f2-)
+
+    menu_entry="Stash $stash_count: - $stash_desc"$'\n'
+    menu_entry="$menu_entry$(git stash show --compact-summary $stash_ref)"
+    menu=("${menu[@]}" "$menu_entry")
+    let stash_count++
+  done
+
+  header="Select a stash to restore or press ESC to cancel"
+  menu_bg=""
+  menu_padding=1
+  menu "$header" "menu"
+
+  # If there was an error, display it and return
+  if [[ "$menu_status" -ne 0 ]]; then
+    printf "\n%s\n\n" "$menu_msg"
+    return 1
+  fi
+
+  stash_num=$menu_selected
+
+  unset menu_bg
+  unset menu_padding
+
+  function prompt_for_action() {
+    # Prompt for action
+    header="You selected: ${stash_list[stash_num]}\n"
+    header+="$(git stash show --compact-summary --color=always stash@{$stash_num})\n"
+    header+="\nWhat do you want to do with this stash?"
+    options=("Restore the Stash" "View a Diff" "Drop the Stash" "Save as Patch File" "Restore the Stash in New Branch" "Quit")
+    menu "$header" "options"
+    echo
+
+    # If there was an error, display it and return
+    if [[ "$menu_status" -ne 0 ]]; then
+      printf "%s\n\n" "$menu_msg"
+      return 1
+    fi
+
+    action=$menu_selected
+
+    # Restore stash optionally by name
+    if [[ $action -eq 0 ]]; then
+      # Restore the Stash
+      git stash pop stash@{$stash_num}
+      echo
+      return 1
+    elif [[ $action -eq 1 ]]; then
+      # View a Diff
+      git stash show -p stash@{$stash_num}
+      echo
+      read -p "Press Enter to continue" key
+      return 0
+    elif [[ $action -eq 2 ]]; then
+      # Drop a stash
+      git stash drop stash@{$stash_num}
+      echo
+      return 1
+    elif [[ $action -eq 3 ]]; then
+      # Save as Patch file
+      echo 'What filepath do you want to save to?'
+      read filepath
+      filepath="${filepath/#\~/$HOME}"
+      git stash show -p stash@{$stash_num} >"$filepath"
+      printf "\nWrote patch to %s\n\nPress Enter to return\n" "$filepath"
+      read pause
+      return 0
+    elif [[ $action -eq 4 ]]; then
+      # Restore the Stash in New Branch
+      echo 'What branch name do you want to create? (no spaces)'
+      read branchname
+      git stash branch $branchname stash@{$stash_num}
+      return 1
+    elif [[ $action -eq 5 ]]; then
+      # Quit
+      return 1
+    fi
+  }
+
+  while prompt_for_action; (( $? == 0 )); do
+    # Repeating - Do nothing
+    printf ""
+  done
+}
+
 
 # Check to see if there are new commits on the current branch
 alias_check check
