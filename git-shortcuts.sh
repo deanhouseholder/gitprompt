@@ -430,6 +430,8 @@ function gro() {
   printf "Swapping origin: $remote\nFor:             $new_remote\n"
   git remote remove $origin
   git remote add $origin $new_remote
+  git fetch
+  git branch --set-upstream-to=origin/$(git symbolic-ref --short HEAD)
   printf "Done\n\nYour new remotes are:\n"
   git remote -v
 }
