@@ -36,7 +36,7 @@ git_submark="$(gp_fg 166)"           # FG: Orange
 # and if it is a submodule, get each nested status
 function git_prompt() {
   # Check if current directory is a git repo
-  git_dir="$(git rev-parse --git-dir &>/dev/null)"
+  git_dir="$(git rev-parse --git-dir 2>/dev/null)"
   local gstatus=$?
 
   if [[ $gstatus -eq 0 ]]; then
