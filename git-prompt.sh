@@ -28,150 +28,141 @@ git_ignored="$(gp_fg 240)"           # FG: Dark Gray
 git_subdir="$(gp_fg 251)"            # FG: Light Gray
 git_submark="$(gp_fg 166)"           # FG: Orange
 
-# Define Git version
-# git_version="$(git --version)"
-
+# -----------------------------------
 # Displays the git part of the prompt
-# Specifically this function determines if a dir is a git repo
-# and if it is a submodule, get each nested status
+# -----------------------------------
 function git_prompt() {
   # Check if current directory is a git repo
   git_dir="$(git rev-parse --git-dir 2>/dev/null)"
   local gstatus=$?
 
-  if [[ $gstatus -eq 0 ]]; then
-    # User is currently inside a git repo directory
+  if [[ $gstatus -eq 0 ]] && [[ "$git_dir" != "." ]]; then
+    # Inside a git repo directory
     export git_dir
 
     # Print starting block
     printf "%s [" "$git_style"
 
-    # Detect if in a submodule repo directory
-    # When in a submodule repo dir the `git rev-parse --git-dir` command will contain '.git/modules/'
+    # Submodule detection: if .git path includes .git/modules, we're inside a submodule
     if [[ ! "$git_dir" =~ \.git/modules/ ]]; then
-      # In a regular git repo directory (not a submodule dir)
-      printf "%s" "$(git_display_branch)"
+      # Regular repo
+      _git_display_branch "$PWD"
     else
-      # User is in a submodule repo within a git repo
-      local dira=() # Build an array of directories
-      if [[ -f \.git ]] || [[ -d \.git ]]; then # If this is either a git repo dir or a submodule directory
-        if [[ "$(git rev-parse --show-cdup 2>/dev/null)" == "" ]]; then
-          dira=("$PWD" "${dira[@]}")  # Add this directory to an array of directories
+      # Inside a submodule; build list from top repo -> current
+      local cur="$PWD"
+      local top=""
+      local chain=()
+
+      # Walk upward: collect each repo root where show-cdup is empty
+      while :; do
+        if [[ -e "$cur/.git" ]] && [[ "$(git -C "$cur" rev-parse --show-cdup 2>/dev/null)" == "" ]]; then
+          chain=("$cur" "${chain[@]}") # Add this directory to an array of directories
         fi
-      fi
-      # Move up through the directories until you find the top .git directory
-      while true; do
-        cd ..
-        if [[ -f \.git ]] || [[ -d \.git ]]; then # If this is either a git repo dir or a submodule directory
-          if [[ "$(git rev-parse --show-cdup 2>/dev/null)" == "" ]]; then
-            dira=("$PWD" "${dira[@]}")  # Add this directory to an array of directories
-          fi
+        # If this level is the top repo (git-dir resolves to ".git"), stop
+        if [[ -d "$cur/.git" ]] && [[ "$(git -C "$cur" rev-parse --git-dir 2>/dev/null)" == ".git" ]]; then
+          top="$cur"
+          break
         fi
-        # Possibly found it
-        if [[ -d .git ]]; then
-          # Save some cycles by only running this if susupected to be the top git repo dir
-          if [[ "$(git rev-parse --git-dir 2>/dev/null)" == ".git" ]]; then
-            break # Continue
-          fi
-        fi
+        # Go up; if we're at filesystem root, bail
+        local parent
+        parent="$(dirname "$cur")"
+        [[ "$parent" == "$cur" ]] && break
+        cur="$parent"
       done
-      for i in "${!dira[@]}"; do
-        if cd "${dira[$i]}"; then
-          printf "%s/%s%s (" "$git_subdir" "$(basename "$PWD")" "$git_style"
-          printf "%s%s)" "$(git_display_branch)" "$git_style"
-          test $((i+1)) -eq ${#dira[@]} || printf "%s ↠ " "$git_submark"
-        fi
+
+      # Render each hop: <subdir>/<name> (<branch/status>)
+      local i
+      for i in "${!chain[@]}"; do
+        local repo="${chain[$i]}"
+        printf "%s/%s%s (" "$git_subdir" "$(basename "$repo")" "$git_style"
+        _git_display_branch "$repo"
+        printf "%s)" "$git_style"
+        test $((i+1)) -eq ${#chain[@]} || printf "%s ↠ " "$git_submark"
       done
     fi
-    # End of Submodule Logic
+
     printf "%s]" "$git_style"
   else
-    # It might be a bare repo or inside a .git directory
-
-    # Check if in a Bare repository
-    if [[ "$(git rev-parse --is-bare-repository 2>/dev/null)" == "true" ]]; then
-      printf "%s" "$git_dirty"
-      printf "!BARE REPO"
-      printf "%s]" "$git_style"
-
-    # Check if in .git dir
-    elif [[ "$PWD" =~ /\.git/ ]]; then
-      # Only run the following if the path contains '/.git/'
-      if [[ "$(git rev-parse --is-inside-git-dir 2>/dev/null)" == "true" ]]; then
-        printf "%s" "$git_dirty"
-        printf "!GIT DIR"
-        printf "%s]" "$git_style"
-      fi
+    # Not a normal work tree — bare or inside .git?
+    if [[ "$PWD" =~ \.git ]] && [[ "$(git rev-parse --is-inside-git-dir 2>/dev/null)" == "true" ]]; then
+      printf "%s [%s!GIT DIR%s]" "$git_style" "$git_dirty" "$git_style"
+    elif [[ "$(git rev-parse --is-bare-repository 2>/dev/null)" == "true" ]]; then
+      printf "%s [%s!BARE REPO%s]" "$git_style" "$git_dirty" "$git_style"
     fi
   fi
 }
 
-# Displays the branch name along with status/color
-function git_display_branch {
-  # Determine BG color
-  if [[ "$(git check-ignore . 2>/dev/null)" == "." ]]; then
-    printf "%s" "$git_ignored"                        # Ignored directory
-  elif [[ -z "$(git status -s)" ]]; then
-    printf "%s" "$git_clean"                          # Clean directory
+# ---------------------------------
+# Displays the branch name along with status/color for the current repo
+# ---------------------------------
+_git_display_branch() {
+  local repo="$1"
+
+  # Determine color (ignored / clean / dirty)
+  if GIT_OPTIONAL_LOCKS=0 git -C "$repo" check-ignore -q . 2>/dev/null; then
+    printf "%s" "$git_ignored"
   else
-    printf "%s" "$git_dirty"                          # Dirty directory
+    local dirty=0
+
+    # Unstaged changes? (index vs worktree)
+    GIT_OPTIONAL_LOCKS=0 git -C "$repo" diff-files --quiet --ignore-submodules -- 2>/dev/null || dirty=1
+
+    # Staged changes? (index vs HEAD; handle unborn HEAD)
+    if GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse -q --verify HEAD >/dev/null 2>&1; then
+      GIT_OPTIONAL_LOCKS=0 git -C "$repo" diff-index --quiet --cached HEAD -- 2>/dev/null || dirty=1
+    else
+      GIT_OPTIONAL_LOCKS=0 git -C "$repo" diff-index --quiet --cached "$(git -C "$repo" hash-object -t tree /dev/null)" -- 2>/dev/null || dirty=1
+    fi
+
+    # Untracked files?
+    if IFS= read -r -d '' _ < <(GIT_OPTIONAL_LOCKS=0 git -C "$repo" ls-files --others --exclude-standard -z 2>/dev/null); then
+      dirty=1
+    fi
+
+    # Display background color according to status
+    if [[ "$dirty" -eq 0 ]]; then
+      printf "%s" "$git_clean"
+    else
+      printf "%s" "$git_dirty"
+    fi
   fi
 
-  # Get current branch name
-  local branch
-  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  local branch="$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null)"
 
   # Check if detached head
-  if [[ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD 2>/dev/null)" == "HEAD" ]]; then
-    printf "HEAD°%s" "$(git show -s --pretty=%h HEAD 2>/dev/null)"
+  if [[ "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name HEAD 2>/dev/null)" == "HEAD" ]]; then
+    printf "HEAD°%s" "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" show -s --pretty=%h HEAD 2>/dev/null)"
   else
     # Display Branch name
     printf "%s" "$branch"
   fi
 
-  if [[ -f "$git_dir/MERGE_HEAD" ]]; then
-    printf '|MERGING'
-  elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then
-    printf "CHERRY-PICKING"
-  elif [[ -f "$git_dir/REVERT_HEAD" ]]; then
-    printf "|REVERTING"
-  elif [[ -f "$git_dir/BISECT_LOG" ]]; then
-    printf "|BISECTING"
-  elif [[ -f "$git_dir/REBASE_HEAD" ]]; then
-    printf "REBASING"
-  elif [[ -d "$git_dir/rebase-apply" ]]; then
-    printf "|REBASE"
+  # In-progress operations
+  local gd="$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --git-dir 2>/dev/null)" || return
+  if   [[ -f "$gd/MERGE_HEAD" ]];                                 then printf '|MERGING'
+  elif [[ -f "$gd/CHERRY_PICK_HEAD" ]];                           then printf '|CHERRY-PICKING'
+  elif [[ -f "$gd/REVERT_HEAD" ]];                                then printf '|REVERTING'
+  elif [[ -f "$gd/BISECT_LOG" ]];                                 then printf '|BISECTING'
+  elif [[ -f "$gd/REBASE_HEAD" ]] || [[ -d "$gd/rebase-apply" ]]; then printf '|REBASING'
   fi
 
-  local output
-  output=""
-
   # Check if the branch is ahead or behind of repo
-  local remote
-  # TODO: If checked out to a new branch created locally and no upstream remote defined, this fails
-  # remote="$(git branch --show-current -vv --format='%(upstream:remotename)')" (if Git version > 2.22)
-  remote="$(git branch -vv | grep -e '^\*')"
-  if [[ $remote =~ \[ ]]; then
-    local remote_name
-    remote_name="$(echo "$remote" | cut -d'[' -f2 | cut -d'/' -f1)"
-    IFS=$'\t' read -r -a ahead_behind <<< "$(git rev-list --left-right --count "$remote_name"/"$branch"..."$branch" 2>/dev/null)"
-    if [[ ${ahead_behind[0]} -ne 0 ]]; then
-      output+="«${ahead_behind[0]}"
-    elif [[ ${ahead_behind[1]} -ne 0 ]]; then
-      output+="»${ahead_behind[1]}"
-    fi
-  elif [[ $remote =~ detached ]]; then # Detached head
-    if [[ -z "$(git remote -v)" ]]; then # Check for any remotes
-      output+="¤"
+  local output="" upstream
+  upstream=$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null) || upstream=""
+  if [ -n "$upstream" ]; then
+    # Get ahead/behind counts
+    if IFS=$'\t' read -r behind ahead < <(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-list --left-right --count "${upstream}...HEAD" 2>/dev/null); then
+      [[ "$behind" -ne 0 ]] && output+="↓${behind}" # commits to pull
+      [[ "$ahead"  -ne 0 ]] && output+="↑${ahead}"  # commits to push
     fi
   else
-    # No Remotes found
-    output+="¤"
+    # Check if no upstream remote defined
+    [[ -z "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" remote 2>/dev/null)" ]] && output+="¤"
   fi
 
   # Check for any Stashed code
-  test -z "$(git stash list)" || output+='§'
+  GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --verify -q refs/stash >/dev/null && output+='§'
 
-  # If anything got added to the output var, print it w/ a space
-  test -z "$output" || printf " %s" "$output"
+  # If anything was added to the output var, print it w/ a space
+  [[ -n "$output" ]] && printf " %s" "$output"
 }
