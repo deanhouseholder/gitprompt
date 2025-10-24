@@ -13,11 +13,14 @@ fi
 
 # Function to shorten the directory
 function shorten_pwd {
-  test ${#PWD} -gt 40 && pwd | awk -F/ '{print "/"$2"/["(NF-4)"]/"$(NF-1)"/"$NF}' || pwd
+  [[ ${#PWD} -gt 40 ]] && pwd | awk -F/ '{print "/"$2"/["(NF-4)"]/"$(NF-1)"/"$NF}' || pwd
 }
 
 # Display the git prompt
 function show_prompt {
+  # Only in interactive terminals
+  [[ -t 1 ]] || return
+
   # Check status of "set -x" xtrace mode
   # If xtrace mode is set, disable it for the prompt, and re-enable it afterwards
   [[ ${-//[^x]/} == "x" ]] && set_x=Y && set +x || set_x=N
@@ -33,21 +36,23 @@ function show_prompt {
   local bg_color user
 
   # Determine if user is root or not
-  test $UID -eq 0 && bg_color="$root_bg" || bg_color="$user_bg"
+  [[ $UID -eq 0 ]] && bg_color="$root_bg" || bg_color="$user_bg"
 
   # Get username
-  test -z "$USER" && user="$(whoami)" || user="$USER"
+  [[ -z "$USER" ]] && user="$(whoami)" || user="$USER"
 
   # Determine if prompt is in a subshell from within vim
   local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
+
+  # If previous command didn't include a new line, add one now
+  # This command determines the current column and if it is not 1, then it prints a new line
+  [[ $(IFS='[;' read -p $'\e[6n' -d R -rs _ ROW COL _ && echo "$COL") -ne 1 ]] && printf "\n"
 
   # Set prompt
   export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$dir_bg $(shorten_pwd) $(git_prompt)➤ $N"
 
   # Restore "set -x" status if set
-  if [[ $set_x == Y ]]; then
-    set -x
-  fi
+  [[ $set_x == Y ]] && set -x
 }
 
 # Run this function every time the prompt is displayed to update the variables
