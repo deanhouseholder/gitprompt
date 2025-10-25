@@ -1,35 +1,11 @@
 #!/bin/bash
 #
-# MENU
-#
-# Description
-#   Display an interactive shell menu and select with arrow keys and Enter.
-#
-# Input variables
-#   $1 The header/prompt you wish to display (up to 20 lines)
-#   $2 The variable name indicating the menu array you have defined
-#
-# Notes
-#   Enter, Tab or Space will select the entry
-#   ESC or Q will cancel
-#   Ctrl+C will quit the script as usual
-#
-# Return values
-#   $menu_status   = The success/error status with 0=success and 1=error
-#   $menu_selected = The selected entry is set to the key of the menu array
-#   $menu_msg      = If there was an error, this will hold the message
-#
-# Styling
-#   If you wish to override the default styles, define any of these variables before calling the menu function.
-#   $menu_marker   = You can override the default marker character
-#   $menu_fg       = You can override the default highlighted entries' text color
-#   $menu_bg       = You can override the default highlighted entries' background color
-#   $menu_padding  = Set to 1 to add a blank space between menu entries
+# MENU WITH SCROLLING SUPPORT (OPTIMIZED FOR NO FLICKER, FIXED NAVIGATION, HEADER, AND SELECTION OUTPUT)
 #
 menu() {
   # Main Menu function
   main_menu() {
-    local i input key selected menu_array menu_fg menu_bg menu_marker header header_lines
+    local i input key selected menu_array menu_fg menu_bg menu_marker header
     local LANG=C.UTF-8                       # Support UTF-8 chars
     local default_marker=$'\u27A4'           # Marker character: ➤
     local default_highlight_fg="\e[38;5;15m" # White text
@@ -69,13 +45,6 @@ menu() {
     header="$1"
     shift
 
-    # Count header lines (up to 20)
-    header_lines=$(echo "$header" | wc -l | awk '{print $1}')
-    if (( header_lines > 20 )); then
-      echo "Error: Header exceeds 20 lines!" >&2
-      return 255
-    fi
-
     if [[ -z "$1" ]]; then
       echo "Error: No menu submitted!" >&2
       return 255
@@ -97,20 +66,14 @@ menu() {
     fi
 
     # Define menu viewport-related vars
-    local selected=0
+    selected=0
     local ROWS=$(tput lines)
-    local visible_count=$(( ROWS - header_lines - 3 ))  # Reserve header_lines, 1 for up arrow, 1 for down arrow, 1 for buffer
+    local visible_count=$(( ROWS - 5 ))  # Reserve 2 for header, 1 for up arrow, 1 for down arrow, 1 for buffer
     local window_top=0
     local last_selected=-1
     local last_window_top=-1
 
-    # Ensure at least 1 visible item
-    if (( visible_count < 1 )); then
-      echo "Error: Terminal too small to display menu!" >&2
-      return 255
-    fi
-
-    # Set highlight colors
+    # Set hightlight colors
     [[ ! -v menu_fg ]] && menu_fg=$default_highlight_fg
     [[ ! -v menu_bg ]] && menu_bg=$default_highlight_bg
     [[ ! -v menu_marker ]] && menu_marker="$default_marker"
@@ -122,7 +85,7 @@ menu() {
     printf "\033[?1049h" >&2  # Switch to alternate screen buffer
     printf "\033[2J" >&2      # Clear screen once
     printf "\033[1;1H" >&2    # Move to top-left
-    printf "%b\n" "$header" >&2  # Print header
+    printf "%s\n\n" "$header" >&2  # Print header
 
     # Display the menu with the selected item highlighted
     display_menu() {
@@ -130,8 +93,8 @@ menu() {
       local end=$(( window_top + visible_count ))
       (( end > ${#menu_array[@]} )) && end=${#menu_array[@]}
 
-      # Move cursor to line after header (header_lines + 1)
-      output+="\033[$((header_lines + 1));1H"
+      # Move cursor to line 3 (below header and blank line)
+      output+="\033[3;1H"
 
       # Clear from cursor to end of screen
       output+="\033[J"

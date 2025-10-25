@@ -1,40 +1,14 @@
 #!/bin/bash
 #
-# MENU
-#
-# Description
-#   Display an interactive shell menu and select with arrow keys and Enter.
-#
-# Input variables
-#   $1 The header/prompt you wish to display (up to 20 lines)
-#   $2 The variable name indicating the menu array you have defined
-#
-# Notes
-#   Enter, Tab or Space will select the entry
-#   ESC or Q will cancel
-#   Ctrl+C will quit the script as usual
-#
-# Return values
-#   $menu_status   = The success/error status with 0=success and 1=error
-#   $menu_selected = The selected entry is set to the key of the menu array
-#   $menu_msg      = If there was an error, this will hold the message
-#
-# Styling
-#   If you wish to override the default styles, define any of these variables before calling the menu function.
-#   $menu_marker   = You can override the default marker character
-#   $menu_fg       = You can override the default highlighted entries' text color
-#   $menu_bg       = You can override the default highlighted entries' background color
-#   $menu_padding  = Set to 1 to add a blank space between menu entries
+# MENU WITH SCROLLING SUPPORT (OPTIMIZED FOR NO FLICKER, FIXED NAVIGATION, HEADER, AND SELECTION OUTPUT)
 #
 menu() {
-  # Main Menu function
   main_menu() {
-    local i input key selected menu_array menu_fg menu_bg menu_marker header header_lines
-    local LANG=C.UTF-8                       # Support UTF-8 chars
-    local default_marker=$'\u27A4'           # Marker character: ➤
-    local default_highlight_fg="\e[38;5;15m" # White text
-    local default_highlight_bg="\e[48;5;4m"  # Blue background
-    # Define keyboard/mouse escape codes
+    local i input key selected menu_array menu_fg menu_bg menu_marker header
+    local LANG=C.UTF-8
+    local default_marker=$'\u27A4'
+    local default_highlight_fg="\e[38;5;15m"
+    local default_highlight_bg="\e[48;5;4m"
     local key_esc=$'\x1B'
     local key_enter1=$'\x0A'
     local key_enter2=$'\x0D'
@@ -57,81 +31,49 @@ menu() {
     local key_pgup2=$'\e[5;2~'
     local key_pgdn1=$'\e[6~'
     local key_pgdn2=$'\e[6;2~'
-    local key_mouse_scroll_up=$'\e[<64;'
-    local key_mouse_scroll_down=$'\e[<65;'
 
-    # Start Checks
-
-    if [[ -z "$1" ]]; then
-      echo "Error: No menu header submitted!" >&2
-      return 255
-    fi
+    if [[ -z "$1" ]]; then echo "Error: No menu header submitted!" >&2; return 255; fi
     header="$1"
     shift
 
-    # Count header lines (up to 20)
-    header_lines=$(echo "$header" | wc -l | awk '{print $1}')
-    if (( header_lines > 20 )); then
-      echo "Error: Header exceeds 20 lines!" >&2
-      return 255
-    fi
+    if [[ -z "$1" ]]; then echo "Error: No menu submitted!" >&2; return 255; fi
 
-    if [[ -z "$1" ]]; then
-      echo "Error: No menu submitted!" >&2
-      return 255
-    fi
-
-    # Define submitted menu
     if [[ -v $2 ]]; then
-      # There are multiple strings passed, so set the array to all of them
       local menu_array=("$@")
     else
-      # If only one remaining string was passed, check to see if it points to an existing array variable
       if declare -p "$1" 2>/dev/null | grep -q '^declare \-a'; then
-        # An array by that name does exist
-        local tmp=$1[@]               # Do a trick to fetch it (compatible with older Bash versions)
+        local tmp=$1[@]
         local menu_array=("${!tmp}")
       else
         local menu_array=("$1")
       fi
     fi
 
-    # Define menu viewport-related vars
-    local selected=0
+    selected=0
     local ROWS=$(tput lines)
-    local visible_count=$(( ROWS - header_lines - 3 ))  # Reserve header_lines, 1 for up arrow, 1 for down arrow, 1 for buffer
+    local visible_count=$(( ROWS - 5 ))  # Reserve 2 for header, 1 for up arrow, 1 for down arrow, 1 for buffer
     local window_top=0
     local last_selected=-1
     local last_window_top=-1
 
-    # Ensure at least 1 visible item
-    if (( visible_count < 1 )); then
-      echo "Error: Terminal too small to display menu!" >&2
-      return 255
-    fi
-
-    # Set highlight colors
     [[ ! -v menu_fg ]] && menu_fg=$default_highlight_fg
     [[ ! -v menu_bg ]] && menu_bg=$default_highlight_bg
     [[ ! -v menu_marker ]] && menu_marker="$default_marker"
 
-    # Initialize screen and enable mouse tracking
+    # Initialize screen
     tput civis >&2
-    printf "\033[?1000h" >&2  # Enable mouse tracking
-    printf "\033[?1006h" >&2  # Enable SGR extended mouse coordinates
     printf "\033[?1049h" >&2  # Switch to alternate screen buffer
     printf "\033[2J" >&2      # Clear screen once
     printf "\033[1;1H" >&2    # Move to top-left
-    printf "%b\n" "$header" >&2  # Print header
+    printf "%s\n\n" "$header" >&2  # Print header
 
-    # Display the menu with the selected item highlighted
     display_menu() {
       local output=""
       local end=$(( window_top + visible_count ))
       (( end > ${#menu_array[@]} )) && end=${#menu_array[@]}
 
-      # Move cursor to line after header (header_lines + 1)
-      output+="\033[$((header_lines + 1));1H"
+      # Move cursor to line 3 (below header and blank line)
+      output+="\033[3;1H"
 
       # Clear from cursor to end of screen
       output+="\033[J"
@@ -162,24 +104,17 @@ menu() {
       printf "%b" "$output" >&2
     }
 
-    # Read in a key with any modifiers
     read_keypress() {
       local keypress byte
       keypress=""
-
-      # Read the first byte
       IFS= read -rsN1 byte
-
-      # Loop to read additional bytes (for multi-byte escape sequences)
-      while [[ -n "$byte" ]]; do
+      while [[ -n $byte ]]; do
         keypress+="$byte"
         IFS= read -rsN1 -t 0.005 byte || break
       done
-
       printf "%s" "$keypress"
     }
 
-    # Main loop to draw menu, handle input, and hand-off selection
     while true; do
       # Only redraw if selection or window position changed
       if (( selected != last_selected || window_top != last_window_top )); then
@@ -188,23 +123,17 @@ menu() {
         last_window_top=$window_top
       fi
 
-      # Read a single character
       input=$(read_keypress)
 
       case "$input" in
-
-        # Cancel
         "$key_esc"|'q'|'Q')
           printf "\033[2J" >&2      # Clear screen
           printf "\033[?1049l" >&2  # Restore main screen buffer
-          printf "\033[?1000l" >&2  # Disable mouse tracking
-          printf "\033[?1006l" >&2  # Disable SGR extended mouse coordinates
           tput cnorm >&2
           return 255
         ;;
 
-        # Move selection up by one item
-        "$key_up1"|"$key_up2"|"$key_left1"|"$key_left2"|"$key_mouse_scroll_up"*)
+        "$key_up1"|"$key_up2")
           ((selected--))
           if (( selected < 0 )); then
             selected=$(( ${#menu_array[@]} - 1 ))
@@ -215,8 +144,7 @@ menu() {
           fi
         ;;
 
-        # Move selection down by one item
-        "$key_down1"|"$key_down2"|"$key_right1"|"$key_right2"|"$key_mouse_scroll_down"*)
+        "$key_down1"|"$key_down2")
           ((selected++))
           if (( selected >= ${#menu_array[@]} )); then
             selected=0
@@ -226,8 +154,31 @@ menu() {
           fi
         ;;
 
-        # Scroll up one screenful
+        "$key_left1"|"$key_left2")
+          # Optionally treat left as up
+          ((selected--))
+          if (( selected < 0 )); then
+            selected=$(( ${#menu_array[@]} - 1 ))
+            window_top=$(( selected - visible_count + 1 ))
+            (( window_top < 0 )) && window_top=0
+          elif (( selected < window_top )); then
+            window_top=$selected
+          fi
+        ;;
+
+        "$key_right1"|"$key_right2")
+          # Optionally treat right as down
+          ((selected++))
+          if (( selected >= ${#menu_array[@]} )); then
+            selected=0
+            window_top=0
+          elif (( selected >= window_top + visible_count )); then
+            window_top=$(( selected - visible_count + 1 ))
+          fi
+        ;;
+
         "$key_pgup1"|"$key_pgup2")
+          # Scroll up one screenful
           window_top=$(( window_top - visible_count ))
           selected=$(( selected - visible_count ))
           if (( window_top < 0 )); then
@@ -236,8 +187,8 @@ menu() {
           fi
         ;;
 
-        # Scroll down one screenful
         "$key_pgdn1"|"$key_pgdn2")
+          # Scroll down one screenful
           window_top=$(( window_top + visible_count ))
           selected=$(( selected + visible_count ))
           if (( window_top + visible_count > ${#menu_array[@]} )); then
@@ -247,25 +198,20 @@ menu() {
           fi
         ;;
 
-        # Jump to top of list
         "$key_home1"|"$key_home2"|"$key_ctrl_a")
           selected=0
           window_top=0
         ;;
 
-        # Jump to end of list
         "$key_end1"|"$key_end2"|"$key_ctrl_e")
           selected=$(( ${#menu_array[@]} - 1 ))
           window_top=$(( selected - visible_count + 1 ))
           (( window_top < 0 )) && window_top=0
         ;;
 
-        # Make selection
         "$key_enter1"|"$key_enter2"|"$key_tab"|''|' ')
           printf "\033[2J" >&2      # Clear screen
           printf "\033[?1049l" >&2  # Restore main screen buffer
-          printf "\033[?1000l" >&2  # Disable mouse tracking
-          printf "\033[?1006l" >&2  # Disable SGR extended mouse coordinates
           tput cnorm >&2
           printf "%d" "$selected"   # Output selected index to stdout
           return 0
@@ -274,19 +220,15 @@ menu() {
     done
   }
 
-  # This wrapper function handles clearing screen and output handling
   tput clear >&2 2>/dev/null || clear >&2
   export menu_msg menu_selected menu_status
   menu_msg=""
   menu_selected=""
-
   # Capture main_menu output and status
   menu_selected=$(main_menu "$@")
   local status=$?
-
   # Trim any whitespace
   menu_selected=$(echo "$menu_selected" | tr -d '[:space:]')
-
   if [[ $status -eq 0 && -n "$menu_selected" ]]; then
     # Validate as numeric using string check
     if [[ "$menu_selected" =~ ^[0-9]+$ ]]; then

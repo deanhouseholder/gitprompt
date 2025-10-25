@@ -1,0 +1,160 @@
+#!/bin/bash
+#
+# MENU WITH SCROLLING SUPPORT
+#
+menu() {
+  main_menu() {
+    local i input key selected menu_array menu_fg menu_bg menu_marker header
+    local LANG=C.UTF-8
+    local default_marker=$'\u27A4'
+    local default_highlight_fg="\e[38;5;15m"
+    local default_highlight_bg="\e[48;5;4m"
+    local key_esc=$'\x1B'
+    local key_enter1=$'\x0A'
+    local key_enter2=$'\x0D'
+    local key_tab=$'\x09'
+    local key_down1=$'\e[A'
+    local key_down2=$'\eOA'
+    local key_up1=$'\e[B'
+    local key_up2=$'\eOB'
+    local key_left1=$'\e[C'
+    local key_left2=$'\eOC'
+    local key_right1=$'\e[D'
+    local key_right2=$'\eOD'
+    local key_home1=$'\e[H'
+    local key_home2=$'\eOH'
+    local key_ctrl_a=$'\x01'
+    local key_end1=$'\e[F'
+    local key_end2=$'\eOF'
+    local key_ctrl_e=$'\x05'
+    local key_pgup=$'\e[5~'
+    local key_pgdn=$'\e[6~'
+
+    if [[ -z "$1" ]]; then echo "Error: No menu header submitted!" >&2; return 1; fi
+    header="$1"
+    shift
+
+    if [[ -z "$1" ]]; then echo "Error: No menu submitted!" >&2; return 1; fi
+
+    if [[ -v $2 ]]; then
+      local menu_array=("$@")
+    else
+      if declare -p "$1" 2>/dev/null | grep -q '^declare \-a'; then
+        local tmp=$1[@]
+        local menu_array=("${!tmp}")
+      else
+        local menu_array=("$1")
+      fi
+    fi
+
+    selected=0
+    local ROWS=$(tput lines)
+    local visible_count=$(( ROWS - 4 ))
+    local window_top=0
+
+    [[ ! -v menu_fg ]] && menu_fg=$default_highlight_fg
+    [[ ! -v menu_bg ]] && menu_bg=$default_highlight_bg
+
+    display_menu() {
+      tput civis
+      printf "[2J" >&2
+      tput cup 0 0 >&2
+      [[ -z "$menu_marker" ]] && menu_marker="$default_marker"
+      local end=$(( window_top + visible_count ))
+      (( end > ${#menu_array[@]} )) && end=${#menu_array[@]}
+
+      printf "%s\n\n" "$header" >&2
+      if (( window_top > 0 )); then echo "   ↑ ..." >&2; fi
+
+      for (( i=window_top; i<end; i++ )); do
+        if (( i == selected )); then
+          printf "%b%b %s %s\e[0m\n" "$menu_fg" "$menu_bg" "$menu_marker" "${menu_array[$i]}" >&2
+        else
+          echo "   ${menu_array[$i]}" >&2
+        fi
+        [[ "$menu_padding" == 1 ]] && echo >&2
+      done
+
+      if (( end < ${#menu_array[@]} )); then echo "   ↓ ..." >&2; fi
+    }
+
+    read_keypress() {
+      local keypress byte
+      keypress=""
+      IFS= read -rsN1 byte
+      while [[ -n $byte ]]; do
+        keypress+="$byte"
+        IFS= read -rsN1 -t 0.005 byte || break
+      done
+      printf "%s" "$keypress"
+    }
+
+    while true; do
+      display_menu
+      input=$(read_keypress)
+
+      case $input in
+        $key_esc|'q'|'Q') tput cnorm; echo "Canceled" >&2; return 1;;
+
+        $key_down1|$key_down2|$key_right1|$key_right2)
+          ((selected--))
+          if (( selected < 0 )); then
+            selected=$(( ${#menu_array[@]} - 1 ))
+          fi
+          (( selected < window_top )) && window_top=$selected
+          (( selected >= window_top + visible_count )) && window_top=$(( selected - visible_count + 1 ))
+        ;;
+
+        $key_up1|$key_up2|$key_left1|$key_left2)
+          ((selected++))
+          if (( selected >= ${#menu_array[@]} )); then
+            selected=0
+          fi
+          (( selected < window_top )) && window_top=$selected
+          (( selected >= window_top + visible_count )) && window_top=$(( selected - visible_count + 1 ))
+        ;;
+
+        $key_pgup)
+          selected=$(( selected - visible_count ))
+          (( selected < 0 )) && selected=0
+          (( window_top = selected ))
+        ;;
+
+        $key_pgdn)
+          selected=$(( selected + visible_count ))
+          (( selected >= ${#menu_array[@]} )) && selected=$(( ${#menu_array[@]} - 1 ))
+          window_top=$(( selected - visible_count + 1 ))
+          (( window_top < 0 )) && window_top=0
+        ;;
+
+        $key_home1|$key_home2|$key_ctrl_a)
+          selected=0
+          window_top=0
+        ;;
+
+        $key_end1|$key_end2|$key_ctrl_e)
+          selected=$((${#menu_array[@]} - 1))
+          window_top=$(( selected - visible_count + 1 ))
+          (( window_top < 0 )) && window_top=0
+        ;;
+
+        $key_enter1|$key_enter2|$key_tab|''|' ')
+          tput cnorm
+          return $selected
+        ;;
+      esac
+    done
+  }
+
+  tput clear 2>/dev/null || clear
+  export menu_msg menu_selected menu_status
+  menu_msg="$(main_menu "$@")"
+  menu_selected=$?
+  if [[ -z "$menu_msg" ]]; then
+    menu_status=0
+    return 0
+  else
+    menu_status=1
+    return 1
+  fi
+}

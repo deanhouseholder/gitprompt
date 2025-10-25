@@ -53,15 +53,154 @@ alias wip='git commit -am "WIP"'
 function alias_check() {
   alias "$1" &>/dev/null
   if [[ $? -eq 0 ]]; then
-    printf "Warning you have an alias defined for $1 which conflicts with GitPrompt\n"
+    printf "Warning you have an alias defined for %s which conflicts with GitPrompt\n" "$1"
     printf "Your alias will remain so the GitPrompt shortcut will not work.\n\n"
   fi
 }
+
+# Convert bytes to human-readable format
+human_readable_bytes() {
+  local bytes=$1
+  if [ $bytes -lt 1024 ]; then
+    echo "${bytes} B"
+  elif [ $bytes -lt $((1024 * 1024)) ]; then
+    echo "$(echo "scale=1; $bytes / 1024" | bc) KB"
+  elif [ $bytes -lt $((1024 * 1024 * 1024)) ]; then
+    echo "$(echo "scale=1; $bytes / (1024 * 1024)" | bc) MB"
+  else
+    echo "$(echo "scale=1; $bytes / (1024 * 1024 * 1024)" | bc) GB"
+  fi
+}
+
+# List all files within a given stash
+list_stash_files() {
+  local stash_ref="$1"
+
+  if [[ ! "$stash_ref" =~ ^stash@\{[0-9]+\}$ ]]; then
+    echo "Usage: list_stash_files stash@{N}" >&2
+    return 1
+  fi
+
+  if ! git rev-parse --verify "$stash_ref" >/dev/null 2>&1; then
+    echo "Stash $stash_ref not found." >&2
+    return 1
+  fi
+
+  if git rev-parse --verify "$stash_ref"^3 >/dev/null 2>&1; then
+    git diff --name-only "$stash_ref"^3 | while read -r file; do
+      if ! git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+        echo "$file U"
+      fi
+    done
+  fi
+
+  # Now add tracked files (still diff against ^1 to avoid false positives)
+  git diff --name-only "$stash_ref"^1 "$stash_ref"
+}
+
+#
+list_stash_files_with_size() {
+    local stash_ref="$1"
+    local temp_file
+    temp_file=$(mktemp)
+
+    if [[ ! "$stash_ref" =~ ^stash@\{[0-9]+\}$ ]]; then
+        echo "Usage: list_stash_files stash@{N}" >&2
+        return 1
+    fi
+
+    if ! git rev-parse --verify "$stash_ref" >/dev/null 2>&1; then
+        echo "Stash $stash_ref not found." >&2
+        return 1
+    fi
+
+    humanize() {
+        local bytes=$1
+        awk -v b="$bytes" '
+            function human(x, units) {
+                i = 0
+                while (x >= 1024 && i < length(units) - 1) {
+                    x /= 1024
+                    i++
+                }
+                return int(x + 0.5) substr(units, i+1, 1)
+            }
+            BEGIN { print human(b, "BKMGTPEZY") }
+        '
+    }
+
+    > "$temp_file.rows"
+    > "$temp_file.bytes"
+
+    # --- Untracked files ---
+    if git rev-parse --verify "$stash_ref"^3 >/dev/null 2>&1; then
+        while IFS=$'\t' read -r meta path; do
+            hash=$(awk '{print $3}' <<< "$meta")
+            size=$(git cat-file -s "$hash" 2>/dev/null || echo 0)
+            human=$(humanize "$size")
+            echo "$human|A|$path" >> "$temp_file.rows"
+            echo "$size" >> "$temp_file.bytes"
+        done < <(git ls-tree -r "$stash_ref"^3)
+    fi
+
+    # --- Tracked files ---
+    git diff --name-only "$stash_ref"^1 "$stash_ref" | while read -r path; do
+        diff_output=$(git diff "$stash_ref"^1 "$stash_ref" -- "$path")
+        if grep -q "Binary files" <<< "$diff_output"; then
+            before_blob=$(git ls-tree "$stash_ref"^1 -- "$path" | awk '{print $3}')
+            after_blob=$(git ls-tree "$stash_ref"   -- "$path" | awk '{print $3}')
+            before_size=$(git cat-file -s "$before_blob" 2>/dev/null || echo 0)
+            after_size=$(git cat-file -s "$after_blob" 2>/dev/null || echo 0)
+            size=$((after_size - before_size))
+        else
+            size=$(wc -c <<< "$diff_output")
+        fi
+        human=$(humanize "$size")
+        echo "$human|M|$path" >> "$temp_file.rows"
+        echo "$size" >> "$temp_file.bytes"
+    done
+
+    # Determine max width of Size column
+    local max_size
+    max_size=$(awk -F'\\|' '
+        { if (length($1) > max) max = length($1) }
+        END { print (max > 4 ? max : 4) }
+    ' "$temp_file.rows")
+
+    local status_col_width=6
+
+    # Header
+    printf "%*s  %-*s  %s\n" "$max_size" "Size" "$status_col_width" "Status" "File"
+
+    # Rows
+    awk -F'\\|' -v size_w="$max_size" -v status_w="$status_col_width" '
+        {
+            printf "%" size_w "s  %-*s  %s\n", $1, status_w, $2, $3
+        }
+    ' "$temp_file.rows"
+
+    echo "-----------------------------"
+
+    # Total
+    local total_bytes total_human
+    total_bytes=$(awk '{sum+=$1} END{print sum}' "$temp_file.bytes")
+    total_human=$(humanize "$total_bytes")
+
+    printf "%*s  %-*s  %s\n" "$max_size" "$total_human" "$status_col_width" "" "Total"
+
+    rm -f "$temp_file" "$temp_file.rows" "$temp_file.bytes"
+}
+
 
 # Stash with optional name
 alias_check stash
 stash() {
   test -z "$1" && git stash || git stash save "$*"
+}
+
+alias_check stashall
+stashall() {
+  git stash push --include-untracked -m "[Untracked] $*"
 }
 
 alias_check restore
@@ -82,19 +221,35 @@ restore() {
   stash_count=0
   menu=()
   for stash_info in "${stash_list[@]}"; do
-    # Extract the stash reference using cut
+    # Get Stash Data
     stash_ref=$(echo "$stash_info" | cut -d: -f1)
-    # The rest of the line is the stash description
-    stash_desc=$(echo "$stash_info" | cut -d: -f2-)
+    stash_desc="$(git log --format=%B -n 1 $stash_ref | grep -v "^WIP on" | grep -v "^$" || echo "")"
+    timestamp=$(git log --format="%cd" --date=iso-local -n 1 $stash_ref)
+    byte_count=$(git ls-tree -r -l $stash_ref | awk '{sum += $4} END {print sum}')
+    byte_count=${byte_count:-0} # If no data found, default to 0
 
-    menu_entry="Stash $stash_count: - $stash_desc"$'\n'
-    menu_entry="$menu_entry$(git stash show --compact-summary --color=always $stash_ref)"
+    # Include byte count of untracked files (third parent, if exists)
+    third_parent=$(git log --format=%P -n 1 $stash_ref 2>/dev/null | awk '{print $3}')
+    if [ -n "$third_parent" ]; then
+      untracked_byte_count=$(git ls-tree -r -l $third_parent | awk '{sum += $4} END {print sum}')
+      untracked_byte_count=${untracked_byte_count:-0}
+      byte_count=$((byte_count + untracked_byte_count))
+    fi
+
+    # Convert total byte count to human-readable format
+    human_bytes=$(human_readable_bytes $byte_count)
+
+    # Build the initial stash menu options
+    menu_entry="Stash $stash_count: - $stash_desc\n"
+    menu_entry+=" (git stash show --compact-summary --color=never $stash_ref)\n"
+    menu_entry+=" Date: $timestamp\n Size: $human_bytes"
     menu=("${menu[@]}" "$menu_entry")
     let stash_count++
   done
 
-  header="Select a stash to restore or press ESC to cancel"
-  menu_padding=1 menu_bg="" menu "$header" "menu"
+  # Show the initial stash menu
+  header="Select a stash to restore/view/drop/etc., or press ESC to cancel"
+  menu_padding=1 menu "$header" "menu"
 
   # If there was an error, display it and return
   if [[ "$menu_status" -ne 0 ]]; then
@@ -109,10 +264,10 @@ restore() {
 
   function prompt_for_action() {
     # Prompt for action
-    header="You selected: ${stash_list[stash_num]}\n"
-    header+="$(git stash show --compact-summary --color=always stash@{$stash_num})\n"
-    header+="\nWhat do you want to do with this stash?"
-    options=("Restore the Stash" "View a Diff" "Drop the Stash" "Save as Patch File" "Restore the Stash in New Branch" "Quit")
+    header="You selected: ${stash_list[$stash_num]}\n"
+    header+="$(list_stash_files stash@{$stash_num})\n\n"
+    header+="What do you want to do with this stash?"
+    options=("Restore the Stash" "List files" "View a Diff" "Drop the Stash" "Save as Patch File" "Restore the Stash in New Branch" "Quit")
     menu "$header" "options"
     echo
 
@@ -131,17 +286,23 @@ restore() {
       echo
       return 1
     elif [[ $action -eq 1 ]]; then
+      # List files
+      list_stash_files_with_size stash@{$stash_num}
+      echo
+      read -p "Press Enter to continue" key
+      return 0
+    elif [[ $action -eq 2 ]]; then
       # View a Diff
       git stash show -p stash@{$stash_num}
       echo
       read -p "Press Enter to continue" key
       return 0
-    elif [[ $action -eq 2 ]]; then
+    elif [[ $action -eq 3 ]]; then
       # Drop a stash
       git stash drop stash@{$stash_num}
       echo
       return 1
-    elif [[ $action -eq 3 ]]; then
+    elif [[ $action -eq 4 ]]; then
       # Save as Patch file
       echo 'What filepath do you want to save to?'
       read filepath
@@ -150,13 +311,13 @@ restore() {
       printf "\nWrote patch to %s\n\nPress Enter to return\n" "$filepath"
       read pause
       return 0
-    elif [[ $action -eq 4 ]]; then
+    elif [[ $action -eq 5 ]]; then
       # Restore the Stash in New Branch
       echo 'What branch name do you want to create? (no spaces)'
       read branchname
       git stash branch $branchname stash@{$stash_num}
       return 1
-    elif [[ $action -eq 5 ]]; then
+    elif [[ $action -eq 6 ]]; then
       # Quit
       return 1
     fi
