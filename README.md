@@ -120,6 +120,13 @@ set-branches   set-head       set-url        show           update
 
 And finally you can type `git remote add ` and press tab twice to autofill `origin`.
 
+### ShellCheck Integration
+
+Also included is a `gsc` shortcut that allows you to easily run `shellcheck` against your shell scripts.
+- Run `gsc` with no arguments to recursively find and analyze all `.sh` and `.bash` files in your current directory.
+- Run `gsc path/to/script.sh` to analyze a specific file.
+- If `shellcheck` is not installed on your system, the `gsc` shortcut will automatically prompt you to install it via your system's package manager (`brew`, `apt-get`, `dnf`, `yum`, `choco`, or `pacman`).
+
 ## How to contribute
 
 Pull requests are welcomed and appreciated!

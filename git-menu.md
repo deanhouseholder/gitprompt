@@ -51,6 +51,7 @@
 | gro          | Replace the origin Remote for a new repo url                   |
 | gs           | Git Status (ignoring submodules for speed)                     |
 | gsa          | Git Status of all files/submodules                             |
+| gsc          | Run shellcheck on all .sh/.bash files (or specific files)      |
 | gss          | Get the status of all submodules                               |
 | gsu          | Update direct submodules                                       |
 | gu           | Check for git updates (only for git bash)                      |

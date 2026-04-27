@@ -442,3 +442,52 @@ function rebase() {
   test -z "$1" && branch=master || branch="$1"
   git rebase -i $(git merge-base $branch@{u} HEAD)
 }
+
+# Run shellcheck on all .sh and .bash files
+alias_check gsc
+function gsc() {
+  if ! command -v shellcheck &> /dev/null; then
+    echo "shellcheck could not be found."
+    read -p "Would you like to try installing it now? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      if command -v brew &> /dev/null; then
+        echo "Installing via Homebrew..."
+        brew install shellcheck
+      elif command -v apt-get &> /dev/null; then
+        echo "Installing via apt-get..."
+        sudo apt-get install -y shellcheck
+      elif command -v choco &> /dev/null; then
+        echo "Installing via Chocolatey..."
+        choco install shellcheck -y
+      elif command -v dnf &> /dev/null; then
+        echo "Installing via dnf..."
+        sudo dnf install -y shellcheck
+      elif command -v yum &> /dev/null; then
+        echo "Installing via yum..."
+        sudo yum install -y shellcheck
+      elif command -v pacman &> /dev/null; then
+        echo "Installing via pacman..."
+        sudo pacman -S --noconfirm shellcheck
+      else
+        echo "Could not detect a supported package manager (brew, apt-get, dnf, yum, choco, pacman)."
+        echo "Please install it manually from https://www.shellcheck.net/"
+        return 1
+      fi
+      
+      if ! command -v shellcheck &> /dev/null; then
+        echo "Installation failed or shellcheck is not in PATH. Please install it manually."
+        return 1
+      fi
+    else
+      return 1
+    fi
+  fi
+
+  if [ $# -eq 0 ]; then
+    echo "Running shellcheck on all .sh and .bash files..."
+    find . -type f \( -name "*.sh" -o -name "*.bash" \) -exec shellcheck {} +
+  else
+    shellcheck "$@"
+  fi
+}
