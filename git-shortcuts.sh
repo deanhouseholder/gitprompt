@@ -486,7 +486,10 @@ function gsc() {
 
   if [ $# -eq 0 ]; then
     echo "Running shellcheck on all .sh and .bash files..."
-    find . -type f \( -name "*.sh" -o -name "*.bash" \) -exec shellcheck {} +
+    find . -not -path '*/.*' -type f \( -name "*.sh" -o -name "*.bash" \) -exec shellcheck {} +
+  elif [ -d "$1" ] && [ $# -eq 1 ]; then
+    echo "Running shellcheck on all .sh and .bash files in $1..."
+    find "$1" -not -path '*/.*' -type f \( -name "*.sh" -o -name "*.bash" \) -exec shellcheck {} +
   else
     shellcheck "$@"
   fi
