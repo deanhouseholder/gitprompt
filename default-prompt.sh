@@ -32,6 +32,7 @@ function show_prompt {
   local dir_bg="$(gp_bg 236)"   # BG: Dark Gray
   local host_bg="$(gp_bg 30)"   # BG: Blue-Green
   local vim_bg="$(gp_bg 90)"    # BG: Purple
+  local py_bg="$(gp_bg 53)"     # BG: Dark Purple
   local N="$(gp_norm)"          # Reset styles
   local bg_color user
 
@@ -44,12 +45,15 @@ function show_prompt {
   # Determine if prompt is in a subshell from within vim
   local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
 
+  # Determine if prompt is in a python virtual environment
+  local py=$([[ -n "$VIRTUAL_ENV" ]] && printf "$py_bg $(basename $VIRTUAL_ENV) $N")
+
   # If previous command didn't include a new line, add one now
   # This command determines the current column and if it is not 1, then it prints a new line
   [[ $(IFS='[;' read -p $'\e[6n' -d R -rs _ ROW COL _ && echo "$COL") -ne 1 ]] && printf "\n"
 
   # Set prompt
-  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$dir_bg $(shorten_pwd) $(git_prompt)➤ $N"
+  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$py$dir_bg $(shorten_pwd) $(git_prompt)➤ $N"
 
   # Restore "set -x" status if set
   [[ $set_x == Y ]] && set -x
