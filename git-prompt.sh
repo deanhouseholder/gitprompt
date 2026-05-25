@@ -131,7 +131,12 @@ _git_display_branch() {
 
   # Check if detached head
   if [[ "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name HEAD 2>/dev/null)" == "HEAD" ]]; then
-    printf "HEAD°%s" "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" show -s --pretty=%h HEAD 2>/dev/null)"
+    local tag=$(git describe --tags --exact-match 2>/dev/null)
+    if [ -n "$tag" ]; then
+      printf "TAG:%s" "$tag"
+    else
+      printf "HEAD°%s" "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" show -s --pretty=%h HEAD 2>/dev/null)"
+    fi
   else
     # Display Branch name
     printf "%s" "$branch"
