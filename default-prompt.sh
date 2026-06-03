@@ -46,7 +46,7 @@ function show_prompt {
   local vim=$(test ! -z "$VIMRUNTIME" && printf "$vim_bg [in vim] ")
 
   # Determine if prompt is in a python virtual environment
-  local py=$([[ -n "$VIRTUAL_ENV" ]] && printf "$py_bg $(basename $VIRTUAL_ENV) $N")
+  local py=$([[ -n "$VIRTUAL_ENV" ]] && printf "$py_bg $(_gp_sanitize "$(basename "$VIRTUAL_ENV")") $N")
 
   # If previous command didn't include a new line, add one now
   # This command determines the current column and if it is not 1, then it prints a new line

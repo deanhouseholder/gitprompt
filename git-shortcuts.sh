@@ -1,6 +1,6 @@
 # Git Aliases
 alias g='git'
-alias branch='f(){ test -z "$1" && echo "No branch name given." && return 1; git fetch &>/dev/null; git checkout -b $1 &>/dev/null || git checkout $1 &>/dev/null; git branch -u origin/$1 $1 &>/dev/null; git push --set-upstream origin $1 &>/dev/null; }; f'
+alias branch='f(){ test -z "$1" && echo "No branch name given." && return 1; git fetch &>/dev/null; git checkout -b "$1" &>/dev/null || git checkout "$1" &>/dev/null; git branch -u "origin/$1" "$1" &>/dev/null; git push --set-upstream origin "$1" &>/dev/null; }; f'
 alias cleanup='d=($(git branch --merged | grep -Ev develop\|master | sed -e "s/^\*//" -e "s/^ *//g" | uniq)); if [[ ${#d[@]} -gt 0 ]]; then echo ${d[@]} | xargs git branch -d; fi'
 alias g.='git add . && gs'
 alias ga='git add'
@@ -88,7 +88,7 @@ restore() {
     stash_desc=$(echo "$stash_info" | cut -d: -f2-)
 
     menu_entry="Stash $stash_count: - $stash_desc"$'\n'
-    menu_entry="$menu_entry$(git stash show --compact-summary --color=always $stash_ref)"
+    menu_entry="$menu_entry$(git stash show --compact-summary --color=always "$stash_ref")"
     menu=("${menu[@]}" "$menu_entry")
     let stash_count++
   done
@@ -110,7 +110,7 @@ restore() {
   function prompt_for_action() {
     # Prompt for action
     header="You selected: ${stash_list[stash_num]}\n"
-    header+="$(git stash show --compact-summary --color=always stash@{$stash_num})\n"
+    header+="$(git stash show --compact-summary --color=always "stash@{$stash_num}")\n"
     header+="\nWhat do you want to do with this stash?"
     options=("Restore the Stash" "View a Diff" "Drop the Stash" "Save as Patch File" "Restore the Stash in New Branch" "Quit")
     menu "$header" "options"
@@ -127,18 +127,18 @@ restore() {
     # Restore stash optionally by name
     if [[ $action -eq 0 ]]; then
       # Restore the Stash
-      git stash pop stash@{$stash_num}
+      git stash pop "stash@{$stash_num}"
       echo
       return 1
     elif [[ $action -eq 1 ]]; then
       # View a Diff
-      git stash show -p stash@{$stash_num}
+      git stash show -p "stash@{$stash_num}"
       echo
       read -p "Press Enter to continue" key
       return 0
     elif [[ $action -eq 2 ]]; then
       # Drop a stash
-      git stash drop stash@{$stash_num}
+      git stash drop "stash@{$stash_num}"
       echo
       return 1
     elif [[ $action -eq 3 ]]; then
@@ -146,7 +146,7 @@ restore() {
       echo 'What filepath do you want to save to?'
       read filepath
       filepath="${filepath/#\~/$HOME}"
-      git stash show -p stash@{$stash_num} >"$filepath"
+      git stash show -p "stash@{$stash_num}" >"$filepath"
       printf "\nWrote patch to %s\n\nPress Enter to return\n" "$filepath"
       read pause
       return 0
@@ -154,7 +154,7 @@ restore() {
       # Restore the Stash in New Branch
       echo 'What branch name do you want to create? (no spaces)'
       read branchname
-      git stash branch $branchname stash@{$stash_num}
+      git stash branch "$branchname" "stash@{$stash_num}"
       return 1
     elif [[ $action -eq 5 ]]; then
       # Quit
@@ -267,9 +267,9 @@ function gbr() {
   echo
   read -p "Warning! Are you sure you want to delete branch: $1? [y/N] " p
   if [[ "$p" =~ [Yy] ]]; then
-    git branch -d $1 &>/dev/null
+    git branch -d "$1" &>/dev/null
     test $? -eq 0 && printf "\nRemoved branch locally.\n" || printf "\nFailed to remove branch locally.\n"
-    git push origin --delete $1 &>/dev/null
+    git push origin --delete "$1" &>/dev/null
     test $? -eq 0 && printf "Removed branch on origin.\n\n" || printf "Failed to remove branch on origin.\n\n"
   else
     printf "\nCanceled.\n\n"
@@ -294,8 +294,11 @@ function gdf() {
   local start end
   test -z "$2" && start=0 || start="$2"
   test -z "$3" && end=1 || end="$3"
-  # echo "start: $start | end: $end"
-  git diff HEAD~$start HEAD~$end "$1"
+  if ! [[ "$start" =~ ^[0-9]+$ ]] || ! [[ "$end" =~ ^[0-9]+$ ]]; then
+    printf "Error: commit counts must be non-negative integers.\n" >&2
+    return 1
+  fi
+  git diff "HEAD~$start" "HEAD~$end" "$1"
 }
 
 # Set up (or fix) Git Flow
