@@ -328,19 +328,17 @@ function gitflow() {
 # Commit log with colored output for last n commits
 alias_check gl
 function gl() {
-  if [[ $1 -gt 0 ]]; then
-    local count_prev=" -n $1"
-  fi
-  git log --graph --decorate $count_prev
+  local args=()
+  [[ $1 -gt 0 ]] && args=(-n "$1")
+  git log --graph --decorate "${args[@]}"
 }
 
 # Commit log without graph (one line per commit) for last n commits
 alias_check gla
 function gla() {
-  if [[ $1 -gt 0 ]]; then
-    local count_prev=" -n $1"
-  fi
-  git log --oneline --all --source --decorate=short $count_prev
+  local args=()
+  [[ $1 -gt 0 ]] && args=(-n "$1")
+  git log --oneline --all --source --decorate=short "${args[@]}"
 }
 
 # Display the last commit (or last n commits) with a summary of the file(s) modified
@@ -399,7 +397,7 @@ function gm() {
 
 # Git push with auto-detect/fix "no upstream branch" defined error
 function gpu() {
-  local out="$(git push $@)"
+  local out="$(git push "$@")"
   local upstream="$(echo "$out" | grep "git push --set-upstream")"
   if [[ "$(echo $upstream | wc -l)" -eq 1 ]]; then
     $upstream

@@ -41,12 +41,11 @@ git_submark="$(gp_fg 166)"           # FG: Orange
 # -----------------------------------
 function git_prompt() {
   # Check if current directory is a git repo
+  local git_dir
   git_dir="$(git rev-parse --git-dir 2>/dev/null)"
   local gstatus=$?
 
   if [[ $gstatus -eq 0 ]] && [[ "$git_dir" != "." ]]; then
-    # Inside a git repo directory
-    export git_dir
 
     # Print starting block
     printf "%s [" "$git_style"
