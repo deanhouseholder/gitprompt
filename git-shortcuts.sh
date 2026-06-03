@@ -209,15 +209,17 @@ function check() {
   local counter=-1
   local show_previous=3
   local git_log_format="%h$s%cr$s%cd$s%s$s%an"
-  local git_branch=$(git branch | grep '*' | cut -d' ' -f2)
-  local not_yet_pulled="$(git log HEAD..origin/$git_branch --date=default --pretty=format:"$git_log_format" --decorate=full)"
+  local git_branch
+  git_branch="$(git branch --show-current)"
+  local not_yet_pulled="$(git log "HEAD..origin/${git_branch}" --date=default --pretty=format:"$git_log_format" --decorate=full)"
   local local_commits="$(git log --date=default --pretty=format:"$git_log_format")"
   local count_available=$(echo -n "$not_yet_pulled" | grep -c '^')
   local output=$(printf "Timeline \b${s}Hash${s}Committed${s}Author${s}Commit Message$n")
   test $count_available -eq 1 && local is_or_are="is" || local is_or_are="are"
 
   # Display status line
-  printf "\rThere $is_or_are $c_message$count_available$n new updates available on the $c_message$git_branch$n branch which can be pulled.\n\n$c_header"
+  printf "\rThere %s %s%s%s new updates available on the %s%s%s branch which can be pulled.\n\n%b" \
+    "$is_or_are" "$c_message" "$count_available" "$n" "$c_message" "$git_branch" "$n" "$c_header"
 
   # Function to display a single line with the proper formatting
   print_git_log() {
@@ -235,7 +237,7 @@ function check() {
     local commit_msg="${column[3]}"
     local author="${column[4]}"
     output="$( \
-      printf "$output\n" && \
+      printf '%s\n' "$output" && \
       printf "%s$s$c_hash%s$n$s$c_committed%s$n$s$c_author%s$n$s%s\n\n" "$marker" "$hash" "$committed" "$author" "$commit_msg" \
     )"
   }
@@ -254,7 +256,7 @@ function check() {
   done <<< "$local_commits"
 
   # Display the output in columns
-  printf "$output\n" | column -s "$s" -t
+  printf '%s\n' "$output" | column -s "$s" -t
   echo
 }
 
@@ -397,13 +399,17 @@ function gm() {
 
 # Git push with auto-detect/fix "no upstream branch" defined error
 function gpu() {
-  local out="$(git push "$@")"
-  local upstream="$(echo "$out" | grep "git push --set-upstream")"
-  if [[ "$(echo $upstream | wc -l)" -eq 1 ]]; then
-    $upstream
-  else
-    echo "$out"
+  local out remote branch
+  out="$(git push "$@" 2>&1)"
+  if printf '%s\n' "$out" | grep -q 'git push --set-upstream'; then
+    remote="$(printf '%s\n' "$out" | awk '/git push --set-upstream/{print $4}')"
+    branch="$(printf '%s\n' "$out" | awk '/git push --set-upstream/{print $5}')"
+    if [[ -n "$remote" && -n "$branch" ]]; then
+      git push --set-upstream "$remote" "$branch"
+      return
+    fi
   fi
+  printf '%s\n' "$out"
 }
 
 # Display the best guess at the git https url
@@ -428,11 +434,11 @@ function gro() {
   else
     new_remote="https://$(echo "${remote:4}" | sed '0,/:/s//\//')"
   fi
-  printf "Swapping origin: $remote\nFor:             $new_remote\n"
-  git remote remove $origin
-  git remote add $origin $new_remote
+  printf 'Swapping origin: %s\nFor:             %s\n' "$remote" "$new_remote"
+  git remote remove "$origin"
+  git remote add "$origin" "$new_remote"
   git fetch
-  git branch --set-upstream-to=origin/$(git symbolic-ref --short HEAD)
+  git branch --set-upstream-to="origin/$(git symbolic-ref --short HEAD)"
   printf "Done\n\nYour new remotes are:\n"
   git remote -v
 }
@@ -440,6 +446,7 @@ function gro() {
 # Rebase all commits in the branch
 alias_check rebase
 function rebase() {
+  local branch
   test -z "$1" && branch=master || branch="$1"
-  git rebase -i $(git merge-base $branch@{u} HEAD)
+  git rebase -i "$(git merge-base "${branch}@{u}" HEAD)"
 }
