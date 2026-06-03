@@ -20,6 +20,14 @@ function gp_norm() {
   printf "\[\e[0m\]"
 }
 
+# Strip ANSI escape sequences and control characters from data embedded in PS1.
+# Without this, a crafted branch/tag name or directory name could inject terminal
+# escape codes into the prompt (prompt injection via malicious repo or directory).
+_gp_sanitize() {
+  local esc=$'\033'
+  printf '%s' "$1" | sed "s/${esc}\\[[0-9;]*[a-zA-Z]//g; s/${esc}.//g" | tr -d '\000-\037\177'
+}
+
 # Define Git Prompt Colors
 git_style="$(gp_fg 15)$(gp_bg 17)"   # FG: White, BG: Dark Blue-Purple
 git_clean="$(gp_fg 46)"              # FG: Green
@@ -74,7 +82,7 @@ function git_prompt() {
       local i
       for i in "${!chain[@]}"; do
         local repo="${chain[$i]}"
-        printf "%s/%s%s (" "$git_subdir" "$(basename "$repo")" "$git_style"
+        printf "%s/%s%s (" "$git_subdir" "$(_gp_sanitize "$(basename "$repo")")" "$git_style"
         _git_display_branch "$repo"
         printf "%s)" "$git_style"
         test $((i+1)) -eq ${#chain[@]} || printf "%s ↠ " "$git_submark"
@@ -127,11 +135,11 @@ _git_display_branch() {
     fi
   fi
 
-  local branch="$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  local branch="$(_gp_sanitize "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null)")"
 
   # Check if detached head
   if [[ "$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name HEAD 2>/dev/null)" == "HEAD" ]]; then
-    local tag=$(git describe --tags --exact-match 2>/dev/null)
+    local tag=$(_gp_sanitize "$(git describe --tags --exact-match 2>/dev/null)")
     if [ -n "$tag" ]; then
       printf "TAG:%s" "$tag"
     else

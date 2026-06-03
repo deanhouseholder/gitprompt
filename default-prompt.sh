@@ -6,9 +6,9 @@ script_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 
 # To customize the hostname, run: echo my-custom-hostname > ~/.displayname
 if [[ -f ~/.displayname ]]; then
-  export prompt_host="$(cat ~/.displayname)"
+  export prompt_host="$(_gp_sanitize "$(cat ~/.displayname)")"
 else
-  export prompt_host="$(hostname)"
+  export prompt_host="$(_gp_sanitize "$(hostname)")"
 fi
 
 # Function to shorten the directory
@@ -53,7 +53,7 @@ function show_prompt {
   [[ $(IFS='[;' read -p $'\e[6n' -d R -rs _ ROW COL _ && echo "$COL") -ne 1 ]] && printf "\n"
 
   # Set prompt
-  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$py$dir_bg $(shorten_pwd) $(git_prompt)➤ $N"
+  export PS1="$fgr$bg_color $user $fgr$host_bg $prompt_host $fgr$vim$py$dir_bg $(_gp_sanitize "$(shorten_pwd)") $(git_prompt)➤ $N"
 
   # Restore "set -x" status if set
   [[ $set_x == Y ]] && set -x
