@@ -2,8 +2,8 @@
 # Shared helpers for the gitprompt test suite.
 #
 # Requirements: bats-core >= 1.5
-#   Install: https://github.com/bats-core/bats-core#installation
-#   Quick:   git clone https://github.com/bats-core/bats-core ~/.bats && ~/.bats/install.sh /usr/local
+#   Install: git clone https://github.com/bats-core/bats-core ~/.bats && ~/.bats/install.sh /usr/local
+#   Or via apt (may be an older version): sudo apt install bats
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
