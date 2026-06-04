@@ -60,12 +60,12 @@ function alias_check() {
 
 # Stash with optional name
 alias_check stash
-stash() {
+function stash() {
   test -z "$1" && git stash || git stash save "$*"
 }
 
 alias_check restore
-restore() {
+function restore() {
   # Load the menu function
   source "$(dirname "$BASH_SOURCE")/menu.sh"
 
@@ -306,25 +306,25 @@ function gdf() {
 # Set up (or fix) Git Flow
 alias_check gitflow
 function gitflow() {
-    local git_flow_config="master\ndevelop\nfeature/\nbugfix/\nrelease/\nhotfix/\nsupport/\n\n\n"
-    # Check to see if git flow is initialized and is correctly configured
-    echo "Checking git flow config..."
-    local git_flow_check=$(git flow config 2>/dev/null)
-    if [[ $? -eq 1 ]]; then
-      # Check if Git Flow is installed
-      local git_check=$(git flow 2>&1 | grep 'not a git command' | wc -l)
-      if [[ $git_check -eq 1 ]]; then
-        printf "\nError: Git Flow is not installed.\n\nPlease run: \"apt install git-flow\"\n\n"
-        return 1
-      fi
-      # Set Git Flow config
-      echo "Configuring git flow"
-      printf "$git_flow_config" | git flow init >/dev/null
-    elif [[ $(echo "$git_flow_check" | grep "Feature branch prefix: feature/" | wc -l) -eq 0 ]]; then
-      # Force reset of Git Flow config
-      echo "Reconfiguring git flow"
-      printf "$git_flow_config" | git flow init -f >/dev/null
+  local git_flow_config="master\ndevelop\nfeature/\nbugfix/\nrelease/\nhotfix/\nsupport/\n\n\n"
+  # Check to see if git flow is initialized and is correctly configured
+  echo "Checking git flow config..."
+  local git_flow_check=$(git flow config 2>/dev/null)
+  if [[ $? -eq 1 ]]; then
+    # Check if Git Flow is installed
+    local git_check=$(git flow 2>&1 | grep 'not a git command' | wc -l)
+    if [[ $git_check -eq 1 ]]; then
+      printf "\nError: Git Flow is not installed.\n\nPlease run: \"apt install git-flow\"\n\n"
+      return 1
     fi
+    # Set Git Flow config
+    echo "Configuring git flow"
+    printf "$git_flow_config" | git flow init >/dev/null
+  elif [[ $(echo "$git_flow_check" | grep "Feature branch prefix: feature/" | wc -l) -eq 0 ]]; then
+    # Force reset of Git Flow config
+    echo "Reconfiguring git flow"
+    printf "$git_flow_config" | git flow init -f >/dev/null
+  fi
 }
 
 # Commit log with colored output for last n commits
@@ -346,10 +346,9 @@ function gla() {
 # Display the last commit (or last n commits) with a summary of the file(s) modified
 alias_check glast
 function glast() {
-  if [[ $1 -gt 0 ]]; then
-    local count_prev=" -n $1"
-  fi
-  git show --stat=$(tput cols) --compact-summary $count_prev
+  local args=()
+  [[ $1 -gt 0 ]] && args=(-n "$1")
+  git show --stat=$(tput cols) --compact-summary "${args[@]}"
 }
 
 # Display Git Alias Menu

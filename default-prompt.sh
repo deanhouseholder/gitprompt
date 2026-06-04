@@ -12,17 +12,18 @@ else
 fi
 
 # Function to shorten the directory
-function shorten_pwd {
+function shorten_pwd() {
   [[ ${#PWD} -gt 40 ]] && pwd | awk -F/ '{print "/"$2"/["(NF-4)"]/"$(NF-1)"/"$NF}' || pwd
 }
 
 # Display the git prompt
-function show_prompt {
+function show_prompt() {
   # Only in interactive terminals
   [[ -t 1 ]] || return
 
   # Check status of "set -x" xtrace mode
   # If xtrace mode is set, disable it for the prompt, and re-enable it afterwards
+  local set_x
   [[ ${-//[^x]/} == "x" ]] && set_x=Y && set +x || set_x=N
 
   # Define colors for non-git part of prompt
