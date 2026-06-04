@@ -65,9 +65,9 @@ teardown() {
   [[ "$result" == "textmore" ]] || fail "Expected CR stripped, got: $result"
 }
 
-@test "sanitize: strips null bytes" {
-  result="$(_gp_sanitize $'text\x00more')"
-  [[ "$result" == "textmore" ]] || fail "Expected null byte stripped, got: $result"
+@test "sanitize: strips tab characters" {
+  result="$(_gp_sanitize $'text\tmore')"
+  [[ "$result" == "textmore" ]] || fail "Expected tab stripped, got: $result"
 }
 
 @test "sanitize: handles empty string" {

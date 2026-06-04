@@ -237,6 +237,6 @@ make_submodule_repo() {
   git -C "$parent" add parent.txt
   git -C "$parent" commit -q -m "Parent initial"
   # Add the submodule using a file:// URL so git accepts the local path.
-  git -C "$parent" submodule add -q "file://$sub" sub 2>/dev/null
+  git -c protocol.file.allow=always -C "$parent" submodule add -q "file://$sub" sub 2>/dev/null
   git -C "$parent" commit -q -m "Add submodule"
 }
