@@ -35,6 +35,30 @@ git_dirty="$(gp_fg 196)"             # FG: Red
 git_ignored="$(gp_fg 240)"           # FG: Dark Gray
 git_subdir="$(gp_fg 251)"            # FG: Light Gray
 git_submark="$(gp_fg 166)"           # FG: Orange
+git_subtree="$(gp_fg 220)"           # FG: Yellow, for subtree indicator
+
+# Returns the subtree path (relative to repo root) if $PWD is inside a git subtree,
+# empty otherwise. Detection relies on the git-subtree-dir: trailer that git-subtree
+# writes into merge commit messages.
+_git_find_subtree() {
+  local repo="$1"
+  local prefix
+  prefix="$(GIT_OPTIONAL_LOCKS=0 git -C "$repo" rev-parse --show-prefix 2>/dev/null)"
+  prefix="${prefix%/}"
+  [[ -z "$prefix" ]] && return 0  # at repo root — cannot be inside a subtree
+
+  # Collect all matching subtree paths and return the deepest (most specific) one,
+  # so that nested subtrees (e.g. vendor/ext inside vendor/ext/lib) resolve correctly.
+  local best="" dir
+  while IFS= read -r dir; do
+    [[ -z "$dir" ]] && continue
+    if [[ "$prefix" == "$dir" || "$prefix" == "$dir/"* ]]; then
+      [[ ${#dir} -gt ${#best} ]] && best="$dir"
+    fi
+  done < <(GIT_OPTIONAL_LOCKS=0 git -C "$repo" log --merges --pretty="%b" -n 50 2>/dev/null \
+           | grep "^git-subtree-dir:" | sed 's/^git-subtree-dir: //')
+  [[ -n "$best" ]] && printf '%s' "$best"
+}
 
 # -----------------------------------
 # Displays the git part of the prompt
@@ -177,4 +201,9 @@ _git_display_branch() {
 
   # If anything was added to the output var, print it w/ a space
   [[ -n "$output" ]] && printf " %s" "$output"
+
+  # Show subtree indicator if inside a git subtree
+  local subtree_dir
+  subtree_dir="$(_git_find_subtree "$repo")"
+  [[ -n "$subtree_dir" ]] && printf '%s ⊂%s' "$git_subtree" "$subtree_dir"
 }

@@ -191,13 +191,55 @@ is_ignored() { [[ "$1" == *"38;5;240"* ]]; }  # gray   fg 240
 }
 
 # ---------------------------------------------------------------------------
+# Subtrees
+# ---------------------------------------------------------------------------
+
+@test "inside subtree directory: shows ⊂ with path" {
+  make_subtree_repo "$TEST_DIR/repo"
+  result="$(prompt_in "$TEST_DIR/repo/vendor/ext")"
+  [[ "$result" == *"⊂vendor/ext"* ]] || fail "Expected ⊂vendor/ext in: $result"
+}
+
+@test "at repo root with subtree present: no ⊂ indicator" {
+  make_subtree_repo "$TEST_DIR/repo"
+  result="$(prompt_in "$TEST_DIR/repo")"
+  [[ "$result" != *"⊂"* ]] || fail "Expected no ⊂ at repo root, got: $result"
+}
+
+@test "inside nested subtree: shows most-specific ⊂ path" {
+  make_nested_subtree_repo "$TEST_DIR/repo"
+  result="$(prompt_in "$TEST_DIR/repo/vendor/ext/lib")"
+  [[ "$result" == *"⊂vendor/ext/lib"* ]] \
+    || fail "Expected ⊂vendor/ext/lib (deepest match), got: $result"
+}
+
+@test "inside outer subtree with nested subtree present: shows outer ⊂ path" {
+  make_nested_subtree_repo "$TEST_DIR/repo"
+  result="$(prompt_in "$TEST_DIR/repo/vendor/ext")"
+  [[ "$result" == *"⊂vendor/ext"* ]] \
+    || fail "Expected ⊂vendor/ext when in outer subtree, got: $result"
+  [[ "$result" != *"⊂vendor/ext/lib"* ]] \
+    || fail "Expected no inner subtree path when not inside it, got: $result"
+}
+
+# ---------------------------------------------------------------------------
 # Submodules
 # ---------------------------------------------------------------------------
+
+@test "submodule setup: git submodule status shows populated submodule" {
+  make_submodule_repo "$TEST_DIR/parent"
+  # Verify the submodule is actually registered and its working tree is present
+  status_out="$(git -C "$TEST_DIR/parent" submodule status 2>&1)"
+  [[ "$status_out" == *"sub"* ]] \
+    || fail "Expected 'sub' in git submodule status output: $status_out"
+  [[ -f "$TEST_DIR/parent/sub/sub.txt" ]] \
+    || fail "Expected sub/sub.txt to exist — submodule working tree not populated"
+}
 
 @test "inside submodule: shows parent and sub repo names with ↠ separator" {
   make_submodule_repo "$TEST_DIR/parent"
   result="$(prompt_in "$TEST_DIR/parent/sub")"
-  [[ "$result" == *"↠"*    ]] || fail "Expected ↠ separator in submodule prompt: $result"
+  [[ "$result" == *"↠"*     ]] || fail "Expected ↠ separator in submodule prompt: $result"
   [[ "$result" == *"parent"* ]] || fail "Expected parent repo name in: $result"
   [[ "$result" == *"sub"*    ]] || fail "Expected submodule name in: $result"
 }
@@ -206,5 +248,36 @@ is_ignored() { [[ "$1" == *"38;5;240"* ]]; }  # gray   fg 240
   make_submodule_repo "$TEST_DIR/parent"
   result="$(prompt_in "$TEST_DIR/parent/sub")"
   branch_count="$(grep -o 'master' <<< "$result" | wc -l)"
-  [[ "$branch_count" -ge 2 ]] || fail "Expected at least 2 'master' branch names (one per repo) in: $result"
+  [[ "$branch_count" -ge 2 ]] \
+    || fail "Expected at least 2 'master' branch names (one per repo) in: $result"
+}
+
+@test "nested submodule setup: git submodule status --recursive shows all levels" {
+  make_nested_submodule_repo "$TEST_DIR/parent"
+  status_out="$(git -C "$TEST_DIR/parent" submodule status --recursive 2>&1)"
+  [[ "$status_out" == *"sub"*    ]] || fail "Expected 'sub' in recursive status: $status_out"
+  [[ "$status_out" == *"subsub"* ]] || fail "Expected 'subsub' in recursive status: $status_out"
+  [[ -f "$TEST_DIR/parent/sub/subsub/subsub.txt" ]] \
+    || fail "Expected sub/subsub/subsub.txt — nested working tree not populated"
+}
+
+@test "inside nested submodule (3 levels): shows full chain with 2 ↠ separators" {
+  make_nested_submodule_repo "$TEST_DIR/parent"
+  result="$(prompt_in "$TEST_DIR/parent/sub/subsub")"
+  separator_count="$(grep -o '↠' <<< "$result" | wc -l)"
+  [[ "$separator_count" -ge 2 ]] \
+    || fail "Expected at least 2 ↠ separators for 3-level nesting, got: $result"
+  [[ "$result" == *"parent"* ]] || fail "Expected top-level repo name in: $result"
+  [[ "$result" == *"sub"*    ]] || fail "Expected middle repo name in: $result"
+  [[ "$result" == *"subsub"* ]] || fail "Expected deepest repo name in: $result"
+}
+
+@test "inside nested submodule (3 levels): shows branch info for all three repos" {
+  make_nested_submodule_repo "$TEST_DIR/parent"
+  result="$(prompt_in "$TEST_DIR/parent/sub/subsub")"
+  # Each repo entry is wrapped in ( branch-info ) — count opening parens as a
+  # proxy for "branch info was displayed for each repo in the chain".
+  paren_count="$(grep -o '(' <<< "$result" | wc -l)"
+  [[ "$paren_count" -ge 3 ]] \
+    || fail "Expected branch info (in parens) for all 3 repos in chain, got: $result"
 }

@@ -11,6 +11,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+# Resolve a path to absolute (file:// URLs require absolute paths).
+_abspath() { [[ "$1" = /* ]] && printf '%s' "$1" || printf '%s/%s' "$PWD" "$1"; }
+
 # Initialise a git repo with a stable test identity and force branch=master.
 _git_init() {
   local dir="$1"
@@ -33,7 +36,9 @@ _git_commit() {
 # Create a bare remote + a local clone with the first commit already pushed
 # and the upstream tracking branch configured.
 _make_remote_setup() {
-  local local_dir="$1" remote_dir="$2"
+  local local_dir remote_dir
+  local_dir="$(_abspath "$1")"
+  remote_dir="$(_abspath "$2")"
   git init -q --bare "$remote_dir"
   _git_init "$local_dir"
   git -C "$local_dir" remote add origin "file://$remote_dir"
@@ -226,17 +231,106 @@ make_bisecting_repo() {
   git -C "$1" bisect good "$first_sha" 2>/dev/null
 }
 
+make_subtree_repo() {
+  local dir="$1"
+  _git_init "$dir"
+  printf 'main\n' > "$dir/main.txt"
+  git -C "$dir" add main.txt
+  git -C "$dir" commit -q -m "Initial commit"
+  local mainline_sha
+  mainline_sha="$(git -C "$dir" rev-parse HEAD)"
+
+  # Orphan branch simulates unrelated external history (what git subtree imports)
+  git -C "$dir" checkout -q --orphan subtree-import
+  git -C "$dir" rm -q -rf . 2>/dev/null
+  mkdir -p "$dir/vendor/ext"
+  printf 'external\n' > "$dir/vendor/ext/ext.txt"
+  git -C "$dir" add .
+  git -C "$dir" commit -q -m "External source"
+  local split_sha
+  split_sha="$(git -C "$dir" rev-parse HEAD)"
+
+  # Merge back into master with the git-subtree trailer format
+  git -C "$dir" checkout -q master
+  git -C "$dir" merge --allow-unrelated-histories -q subtree-import \
+    -m "$(printf 'Add vendor/ext\n\ngit-subtree-dir: vendor/ext\ngit-subtree-mainline: %s\ngit-subtree-split: %s\n' "$mainline_sha" "$split_sha")"
+  git -C "$dir" branch -q -d subtree-import
+}
+
 make_submodule_repo() {
-  local parent="$1" sub="${1}_sub"
+  local parent sub
+  parent="$(_abspath "$1")"
+  sub="${parent}_sub"
+
+  # Create the standalone repo that will become the submodule
   _git_init "$sub"
   printf 'sub\n' > "$sub/sub.txt"
   git -C "$sub" add sub.txt
   git -C "$sub" commit -q -m "Sub initial"
+
+  # Create the parent repo and register the submodule
   _git_init "$parent"
   printf 'parent\n' > "$parent/parent.txt"
   git -C "$parent" add parent.txt
   git -C "$parent" commit -q -m "Parent initial"
-  # Add the submodule using a file:// URL so git accepts the local path.
-  git -c protocol.file.allow=always -C "$parent" submodule add -q "file://$sub" sub 2>/dev/null
+  git -c protocol.file.allow=always -C "$parent" submodule add "file://$sub" sub
   git -C "$parent" commit -q -m "Add submodule"
+
+  # Populate the submodule working tree — mirrors what a fresh clone requires
+  git -c protocol.file.allow=always -C "$parent" submodule update --init
+}
+
+make_nested_submodule_repo() {
+  local parent sub subsub
+  parent="$(_abspath "$1")"
+  sub="${parent}_sub"
+  subsub="${parent}_subsub"
+
+  # Innermost standalone repo
+  _git_init "$subsub"
+  printf 'subsub\n' > "$subsub/subsub.txt"
+  git -C "$subsub" add subsub.txt
+  git -C "$subsub" commit -q -m "Subsub initial"
+
+  # Middle repo — registers subsub as its submodule
+  _git_init "$sub"
+  printf 'sub\n' > "$sub/sub.txt"
+  git -C "$sub" add sub.txt
+  git -C "$sub" commit -q -m "Sub initial"
+  git -c protocol.file.allow=always -C "$sub" submodule add "file://$subsub" subsub
+  git -C "$sub" commit -q -m "Add subsub"
+  git -c protocol.file.allow=always -C "$sub" submodule update --init
+
+  # Top-level repo — registers sub (with its nested submodule) as its submodule
+  _git_init "$parent"
+  printf 'parent\n' > "$parent/parent.txt"
+  git -C "$parent" add parent.txt
+  git -C "$parent" commit -q -m "Parent initial"
+  git -c protocol.file.allow=always -C "$parent" submodule add "file://$sub" sub
+  git -C "$parent" commit -q -m "Add sub"
+  git -c protocol.file.allow=always -C "$parent" submodule update --init --recursive
+}
+
+make_nested_subtree_repo() {
+  local dir="$1"
+
+  # Build the outer subtree first (vendor/ext)
+  make_subtree_repo "$dir"
+  local mainline_sha
+  mainline_sha="$(git -C "$dir" rev-parse HEAD)"
+
+  # Add an inner subtree at vendor/ext/lib using the same orphan-merge technique
+  git -C "$dir" checkout -q --orphan inner-subtree-import
+  git -C "$dir" rm -q -rf . 2>/dev/null
+  mkdir -p "$dir/vendor/ext/lib"
+  printf 'lib\n' > "$dir/vendor/ext/lib/lib.txt"
+  git -C "$dir" add .
+  git -C "$dir" commit -q -m "Inner lib source"
+  local lib_split_sha
+  lib_split_sha="$(git -C "$dir" rev-parse HEAD)"
+
+  git -C "$dir" checkout -q master
+  git -C "$dir" merge --allow-unrelated-histories -q inner-subtree-import \
+    -m "$(printf 'Add vendor/ext/lib\n\ngit-subtree-dir: vendor/ext/lib\ngit-subtree-mainline: %s\ngit-subtree-split: %s\n' "$mainline_sha" "$lib_split_sha")"
+  git -C "$dir" branch -q -d inner-subtree-import
 }
